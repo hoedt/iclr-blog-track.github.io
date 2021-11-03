@@ -35,13 +35,13 @@ In the setting of a simple linear regression, it can be shown (see e.g., [Lecun 
 
 $$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
 
-By enforcing that the Hessian (= covariance of the data) is (close to) the identity matrix, the optimisation problem becomes a lot easier.
-However, whitening the data can be costly and might even hurt generalisation ([wadia et al., 2021](#wadia21whitening)).
+By enforcing that the Hessian (= covariance of the data) is (close to) the identity matrix, the optimisation problem becomes a lot easier ([Lecun et al., 1998](#lecun98efficient)).
+However, whitening the data can be costly and might even hurt generalisation ([Wadia et al., 2021](#wadia21whitening)).
 Therefore, typical data normalisation consists of centring (to get zero mean) and scaling (to get unit variance) the data to at least improve the condition of the optimisation problem.
 
 When considering multi-layer networks, things get more complicated.
 However, in the end, it turns out that normalising the inputs to a layer should provide the same kind of benefits for the optimisation of the weights in that layer ([Lecun et al., 1998](#lecun98efficient)).
-Using these insights [Schraudolph (1998)](#schraudolph98centering) showed empirically that centring the activations (and gradients) can effectively be used to speed up learning.
+Using these insights [Schraudolph (1998)](#schraudolph98centering) showed empirically that centring the activations can effectively be used to speed up learning.
 
 Also initialisation strategies commonly build on these principles (e.g., [Lecun et al., 1998](#lecun98efficient); [Glorot & Bengio, 2010](#glorot10understanding); [He et al., 2015](#he15delving)).
 Since the initial parameters are independent of the inputs, the weights can be set so that (pre-)activations are effectively normalised before the first update.
@@ -50,7 +50,7 @@ However, as soon as the network is being updated, the distributions change and t
 ### Batch Normalisation
 
 In contrast to classical initialisation methods, Batch Normalisation (BN) is able to maintain fixed mean and variance of the activations as the network is being updated ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
-Concretely, this is achived by applying a typical data normalisation to every mini-batch of data, $\mathcal{B}$:
+Concretely, this is achieved by applying a typical data normalisation to every mini-batch of data, $\mathcal{B}$:
 
 $$\hat{\boldsymbol{x}} = \frac{\boldsymbol{x} - \boldsymbol{\mu}_\mathcal{B}}{\boldsymbol{\sigma}_\mathcal{B}}.$$
 
@@ -58,10 +58,29 @@ Here $\boldsymbol{\mu}_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum_{\boldsymbol{x
 Also note that the division is element-wise and generally is numerically stabilised by some $\varepsilon$ when implemented.
 In case a zero mean and unit variance is not desired, it is also possible to apply an affine transformation $\boldsymbol{y} = \boldsymbol{\gamma} \odot \boldsymbol{x} + \boldsymbol{\beta}$ with learnable scale $(\boldsymbol{\gamma})$ and mean ($\boldsymbol{\beta}$) parameters ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 
-The original reason for introducing BN is to alleviate the so-called _internal covariate shift_, i.e. the change of distributions as the network updates.
-More recent research has pointed out, however, that internal covariate shift does not necessarily deteriorate learning dynamics ([Santurkar et al., 2018](#santurkar18how); [Bjorck et al., 2018](#bjorck18understanding)).
-Therefore it is generally believed that the improvements lie elsewhere.
+The above description explains the core operation of BN during training.
+However, during inference, it is not uncommon to desire predictions for single samples.
+Obviously this would cause trouble because a mini-batch with a single sample has zero variance.
+Therefore, it is common to accumulate the statistics ($\boldsymbol{\mu}_\mathcal{B}$ and $\boldsymbol{\sigma}_\mathcal{B}^2$) that are used for normalisation, during training.
+These accumulated statistics can then be used as estimators for the mean and variance during inference.
+This makes it possible for BN to be used on single samples during inference.
 
+The original reason for introducing BN was to alleviate the so-called _internal covariate shift_, i.e. the change of distributions as the network updates.
+More recent research has pointed out, however, that internal covariate shift does not necessarily deteriorate learning dynamics ([Santurkar et al., 2018](#santurkar18how)).
+Also [Ioffe & Szegedy (2015)](#ioffe15batchnorm) seem to have realised that simply normalising the signal does not suffice: 
+
+ > [...] the model blows up when the normalization parameters are computed outside the gradient descent step.
+
+ All of this seems to indicate that part of the success of BN is due to the effects it has on the gradient signal.
+ The affine transformation simply scales the gradient, such that $\nabla_{\hat{\boldsymbol{x}}} L = \boldsymbol{\gamma} \odot \nabla_{\boldsymbol{y}} L.$
+ The normalisation operation, on the other hand, transforms the gradient, $\boldsymbol{g} = \nabla_{\hat{\boldsymbol{x}}} L$, as follows:
+
+ $$\nabla_{\boldsymbol{x}} L = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
+
+where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} L$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
+Note that this directly corresponds to centering the gradients, which should also improve learning speed [(Schraudolph, 1998)](#schraudolph98centering).
+
+In the end, everyone seems to agree that one of the main beneftis of BN is that it enables higher learning rates ([Ioffe & Szegedy (2015)](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
 
 ### Alternatives
 
@@ -133,16 +152,21 @@ Advances in Neural Information Processing Systems, 30, 971–980.</span>
 ([link](https://papers.nips.cc/paper/2017/hash/5d44ee6f2c3f71b73125876103c8f6c4-Abstract.html),
  [pdf](https://papers.nips.cc/paper/2017/file/5d44ee6f2c3f71b73125876103c8f6c4-Paper.pdf))
 
- <span id="lecun98efficient">LeCun, Y., Bottou, L., Orr, G. B., & Müller, K.-R. (1998). Efficient BackProp. 
- In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st ed., pp. 9–50). Springer. </span> 
- ([link](https://doi.org/10.1007/3-540-49430-8_2),
-  [pdf](http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf))
+<span id="lecun98efficient">LeCun, Y., Bottou, L., Orr, G. B., & Müller, K.-R. (1998). Efficient BackProp. 
+In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st ed., pp. 9–50). Springer. </span> 
+([link](https://doi.org/10.1007/3-540-49430-8_2),
+ [pdf](http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf))
 
 
 <span id="li19understanding">Li, X., Chen, S., Hu, X., & Yang, J. (2019). Understanding the Disharmony Between Dropout and Batch Normalization by Variance Shift. 
 Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2682–2690. </span> 
 ([link](https://doi.org/10.1109/CVPR.2019.00279),
  [pdf](https://openaccess.thecvf.com/content_CVPR_2019/papers/Li_Understanding_the_Disharmony_Between_Dropout_and_Batch_Normalization_by_Variance_CVPR_2019_paper.pdf))
+
+<span id="luo19towards">Luo, P., Wang, X., Shao, W., & Peng, Z. (2019). Towards Understanding Regularization in Batch Normalization. 6. </span>
+([link](https://openreview.net/forum?id=HJlLKjR9FQ),
+ [pdf](https://openreview.net/pdf?id=HJlLKjR9FQ))
+
 
 <span id="mishkin16lsuv">Mishkin, D., & Matas, J. (2016). All you need is a good init. 
 International Conference on Learning Representations 4.</span> 
