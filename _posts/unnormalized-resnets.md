@@ -78,11 +78,26 @@ Also [Ioffe & Szegedy (2015)](#ioffe15batchnorm) seem to have realised that simp
  $$\nabla_{\boldsymbol{x}} L = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
 
 where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} L$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
-Note that this directly corresponds to centering the gradients, which should also improve learning speed [(Schraudolph, 1998)](#schraudolph98centering).
+Note that this directly corresponds to centering the gradients, which should also improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
 
-In the end, everyone seems to agree that one of the main beneftis of BN is that it enables higher learning rates ([Ioffe & Szegedy (2015)](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
+In the end, everyone seems to agree that one of the main beneftis of BN is that it enables higher learning rates ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
+An additional benefit is that BN is scale-invariant and therefore much less sensitive to weight initialisation ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
 
 ### Alternatives
+
+Although BN provides important benefits, it also comes with a few downsides:
+
+ - BN does not work well with **small batch sizes** ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
+   For a batch-size of one, we have zero standard deviation, but also with a few samples, the estimated statistics are often not accurate enough.
+ - BN performs poorly when there are **dependencies between samples** in a mini-batch ([Ioffe, 2017](#ioffe17batchrenorm)).
+ - BN uses **different statistics for inference** than those used during training ([Ba et al., 2016](#ba16layernorm); [Ioffe, 2017](#ioffe17batchrenorm)).
+   This is especially problematic if the distribution during inference is different or drifts away from the training distribution.
+ - BN does not play well with **other regularisation** methods ([Hoffer et al., 2018](#hoffer18norm)).
+   This is especially known for $L_2$ regularisation ([Hoffer et al., 2018](#hoffer18norm)) and dropout ([Li et al., 2019](#li19understanding)).
+ - BN introduces a significant **computational overhead** during training ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Gitman and Ginsburg, 2017](#gitman17comparison)).
+   Because of the running averages, also memory requirements increase when introducing BN.
+
+Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while maintaining the benefits of BN.
 
 
 ## Skip Connections
@@ -122,6 +137,10 @@ International Conference on Learning Representations 9.</span>
 ([link](https://openreview.net/forum?id=IX3Nnir2omJ),
  [pdf](https://openreview.net/pdf?id=IX3Nnir2omJ))
 
+<span id="gitman17comparison">Gitman, I., & Ginsburg, B. (2017). Comparison of Batch Normalization and Weight Normalization Algorithms for the Large-scale Image Classification [Preprint]. </span> 
+([link](http://arxiv.org/abs/1709.08145),
+ [pdf](http://arxiv.org/pdf/1709.08145.pdf))
+
 <span id="he15delving">He, K., Zhang, X., Ren, S., & Sun, J. (2015). Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. 
 Proceedings of the IEEE International Conference on Computer Vision, 1026–1034.</span> 
 ([link](https://doi.org/10.1109/ICCV.2015.123),
@@ -137,6 +156,11 @@ In B. Leibe, J. Matas, N. Sebe, & M. Welling (Eds.), Computer Vision – ECCV 20
 ([link](https://doi.org/10.1007/978-3-319-46493-0_38),
  [pdf](https://arxiv.org/pdf/1603.05027.pdf))
 
+<span id="hoffer18norm">Hoffer, E., Banner, R., Golan, I., & Soudry, D. (2018). Norm matters: Efficient and accurate normalization schemes in deep networks. 
+Advances in Neural Information Processing Systems, 31, 2160–2170. </span> 
+([link](https://proceedings.neurips.cc/paper/2018/hash/a0160709701140704575d499c997b6ca-Abstract.html),
+ [pdf](https://proceedings.neurips.cc/paper/2018/file/a0160709701140704575d499c997b6ca-Paper.pdf))
+
 <span id="huang17centred">Huang, L., Liu, X., Liu, Y., Lang, B., & Tao, D. (2017). Centered Weight Normalization in Accelerating Training of Deep Neural Networks. 
 Proceedings of the IEEE International Conference on Computer Vision, 2822–2830.</span> 
 ([link](https://doi.org/10.1109/ICCV.2017.305),
@@ -146,6 +170,11 @@ Proceedings of the IEEE International Conference on Computer Vision, 2822–2830
 Proceedings of the 32nd International Conference on Machine Learning, 37, 448–456.</span> 
 ([link](http://proceedings.mlr.press/v37/ioffe15.html),
  [pdf](http://proceedings.mlr.press/v37/ioffe15.pdf))
+
+<span id="ioffe17batchrenorm">Ioffe, S. (2017). Batch Renormalization: Towards Reducing Minibatch Dependence in Batch-Normalized Models. 
+Advances in Neural Information Processing Systems, 30, 1945–1953. </span> 
+([link](https://proceedings.neurips.cc/paper/2017/hash/c54e7837e0cd0ced286cb5995327d1ab-Abstract.html),
+ [pdf](https://proceedings.neurips.cc/paper/2017/file/c54e7837e0cd0ced286cb5995327d1ab-Paper.pdf))
 
 <span id="klambauer17selfnorm">Klambauer, G., Unterthiner, T., Mayr, A., & Hochreiter, S. (2017). Self-Normalizing Neural Networks. 
 Advances in Neural Information Processing Systems, 30, 971–980.</span> 
@@ -157,7 +186,6 @@ In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st e
 ([link](https://doi.org/10.1007/3-540-49430-8_2),
  [pdf](http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf))
 
-
 <span id="li19understanding">Li, X., Chen, S., Hu, X., & Yang, J. (2019). Understanding the Disharmony Between Dropout and Batch Normalization by Variance Shift. 
 Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2682–2690. </span> 
 ([link](https://doi.org/10.1109/CVPR.2019.00279),
@@ -166,7 +194,6 @@ Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognitio
 <span id="luo19towards">Luo, P., Wang, X., Shao, W., & Peng, Z. (2019). Towards Understanding Regularization in Batch Normalization. 6. </span>
 ([link](https://openreview.net/forum?id=HJlLKjR9FQ),
  [pdf](https://openreview.net/pdf?id=HJlLKjR9FQ))
-
 
 <span id="mishkin16lsuv">Mishkin, D., & Matas, J. (2016). All you need is a good init. 
 International Conference on Learning Representations 4.</span> 
@@ -201,4 +228,3 @@ Proceedings of the 38th International Conference on Machine Learning, 139, 10617
 International Conference on Learning Representations 6. </span> 
 ([link](https://openreview.net/forum?id=H1gsz30cKX),
  [pdf](https://openreview.net/pdf?id=H1gsz30cKX))
-
