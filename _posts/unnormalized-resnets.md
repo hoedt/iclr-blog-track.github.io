@@ -97,7 +97,28 @@ Although BN provides important benefits, it also comes with a few downsides:
  - BN introduces a significant **computational overhead** during training ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Gitman and Ginsburg, 2017](#gitman17comparison)).
    Because of the running averages, also memory requirements increase when introducing BN.
 
-Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while maintaining the benefits of BN.
+Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
+
+<figure>
+    <img src="../public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods that compute statistics over different parts of the input">
+    <figcaption>
+        Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
+        $|\mathcal{B}|$ is the batch size, $C$ represents the number of channels/features and $S$ is the size of the signal (e.g. width times height for images).
+        The lightly shaded region for LN indicates how it is typically used for image data.
+        Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
+    </figcaption>
+</figure>
+
+One family of alternatives simply computes the statistics along different dimensions (see figure above).
+Layer Normalisation (LN) is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
+Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
+This makes LN invariant to weight shifts and scaling individual samples.
+BN, on the other hand, is invariant to data shifts and scaling individual neurons.
+LN generally outperforms BN in fully connected and recurrent networks, but does not work well for convolutional architectures according to [Ba et al. (2016)](#ba16layernorm).
+Group Normalisation (GN) is a slightly modified version of LN that also works well for convolutional networks ([Wu et al., 2018](#wu18groupnorm)).
+The idea of GN is to compute statistics over groups of features in the feature vector instead of over all features.
+For convolutional networks that should be invariant to changes in contrast, statistics can also be computed over single image channels for each sample.
+This gives rise to a technique known as Instance Normalisation (IN), which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
 
 
 ## Skip Connections
@@ -223,6 +244,12 @@ In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st e
 Proceedings of the 38th International Conference on Machine Learning, 139, 10617–10629.</span> 
 ([link](http://proceedings.mlr.press/v139/wadia21a.html),
  [pdf](http://proceedings.mlr.press/v139/wadia21a/wadia21a.pdf))
+
+<span id="wu18groupnorm">Wu, Y., & He, K. (2018). Group Normalization. 
+Computer Vision – ECCV 2018, 3–19. Springer International Publishing. </span> 
+([link](https://doi.org/10.1007/978-3-030-01261-8_1),
+ [pdf](https://openaccess.thecvf.com/content_ECCV_2018/papers/Yuxin_Wu_Group_Normalization_ECCV_2018_paper.pdf))
+
 
 <span id="zhang19fixup">Zhang, H., Dauphin, Y. N., & Ma, T. (2019). Fixup Initialization: Residual Learning Without Normalization. 
 International Conference on Learning Representations 6. </span> 
