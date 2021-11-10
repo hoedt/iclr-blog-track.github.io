@@ -110,15 +110,31 @@ Therefore, alternative normalisation methods have been proposed to solve one or 
 </figure>
 
 One family of alternatives simply computes the statistics along different dimensions (see figure above).
-Layer Normalisation (LN) is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
+**Layer Normalisation (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
 Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
 This makes LN invariant to weight shifts and scaling individual samples.
 BN, on the other hand, is invariant to data shifts and scaling individual neurons.
 LN generally outperforms BN in fully connected and recurrent networks, but does not work well for convolutional architectures according to [Ba et al. (2016)](#ba16layernorm).
-Group Normalisation (GN) is a slightly modified version of LN that also works well for convolutional networks ([Wu et al., 2018](#wu18groupnorm)).
+**Group Normalisation (GN)** is a slightly modified version of LN that also works well for convolutional networks ([Wu et al., 2018](#wu18groupnorm)).
 The idea of GN is to compute statistics over groups of features in the feature vector instead of over all features.
 For convolutional networks that should be invariant to changes in contrast, statistics can also be computed over single image channels for each sample.
-This gives rise to a technique known as Instance Normalisation (IN), which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
+This gives rise to a technique known as **Instance Normalisation (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
+
+Instead of normalising the inputs, it is also possible to get a normalising effect by rescaling the weights of the network ([Arpit et al., 2016](#arpit16normprop).
+Especially in convolutional networks, this can significantly reduce the computational overhead.
+With **Weight Normalisation (WN)** ([Salimans & Kingma, 2016](#salimans16weightnorm)), the weight vectors for each neuron are normalised to have unit norm.
+This idea can also be found in a(n independently developed) technique called **Normalisation Propagation (NP)** ([Arpit et al., 2016](#arpit16normprop)).
+However, in contrast to WN, NP accounts for the effect of (ReLU) activation functions.
+In some sense, NP can be interpreted as a variant of BN where the statistics are computed theoretically (in expectation) rather than on-the-fly.
+**Spectral Normalisation (SN)**, on the other hand, makes use of an induced matrix norm to normalise the entire weight matrix ([Miyato et al., 2018](#miyato18spectralnorm)).
+Concretely, the weights are scaled by the reciprocal of an approximation of the largest singular value of the weight matrix.
+
+Whereas WN, NP and SN still involve the computation of some weight norm, it is also possible to obtain normalisation without computational overhead.
+By creating a forward pass that induces attracting fixed points in mean and variance, **Self-Normalising Networks (SNNs)** ([Klambauer et al., 2017](#klambauer17selfnorm)) are able to effectively normalise the signal.
+To achieve these fixed points, it suffices to carefully scale the ELU activation function ([Clevert et al., 2016](#clevert16elu)) and the initial variance of the weights.
+Additionally, [Klambauer et al. (2017)](#klambauer17selfnorm) provide a way to tweak dropout so that it does not interfere with the normalisation.
+Maybe it is useful to point out that SNNs do not consist of explicit normalisation operations.
+In this sense, an SNN could already be seen as some form of _normaliser-free_ network.
 
 
 ## Skip Connections
@@ -157,6 +173,11 @@ Advances in Neural Information Processing Systems, 31, 7694–7705. </span>
 International Conference on Learning Representations 9.</span>
 ([link](https://openreview.net/forum?id=IX3Nnir2omJ),
  [pdf](https://openreview.net/pdf?id=IX3Nnir2omJ))
+
+<span id="clevert16elu">Clevert, D.-A., Unterthiner, T., & Hochreiter, S. (2016). Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs). 
+International Conference on Learning Representations 4.</span> 
+([link](http://arxiv.org/abs/1511.07289),
+ [pdf](http://arxiv.org/pdf/1511.07289.pdf))
 
 <span id="gitman17comparison">Gitman, I., & Ginsburg, B. (2017). Comparison of Batch Normalization and Weight Normalization Algorithms for the Large-scale Image Classification [Preprint]. </span> 
 ([link](http://arxiv.org/abs/1709.08145),
@@ -215,6 +236,12 @@ Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognitio
 <span id="luo19towards">Luo, P., Wang, X., Shao, W., & Peng, Z. (2019). Towards Understanding Regularization in Batch Normalization. 6. </span>
 ([link](https://openreview.net/forum?id=HJlLKjR9FQ),
  [pdf](https://openreview.net/pdf?id=HJlLKjR9FQ))
+
+<span id="miyato18spectralnorm">Miyato, T., Kataoka, T., Koyama, M., & Yoshida, Y. (2018). Spectral Normalization for Generative Adversarial Networks. 
+International Conference on Learning Representations 6.</span> 
+([link](https://openreview.net/forum?id=B1QRgziT-),
+ [pdf](https://openreview.net/pdf?id=B1QRgziT-))
+
 
 <span id="mishkin16lsuv">Mishkin, D., & Matas, J. (2016). All you need is a good init. 
 International Conference on Learning Representations 4.</span> 
