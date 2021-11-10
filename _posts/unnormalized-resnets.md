@@ -26,7 +26,7 @@ The goal of this blog post is to provide some insights w.r.t. these questions us
 
 To set the scene for a world without normalisation, we start with an overview of normalisation layers in neural networks.
 Batch Normalisation is probably the most well known method, but there are plenty of alternatives.
-However, all of these methods build on the same principle idea.
+Despite the variety of normalisation methods, they all build on the same principle ideas.
 
 ### Origins
 
@@ -138,6 +138,14 @@ In this sense, an SNN could already be seen as some form of _normaliser-free_ ne
 
 
 ## Skip Connections
+
+[Brock et al. (2021)](#brock21characterizing) mainly aim to rid residual networks (ResNets) of normalisation.
+Therefore, it probably makes sense to revisit the key component of these ResNets: _skip connections_.
+Apart from a bit of historical context, we also aim to provide some intuition as to why normalisation methods can be so helpful in the context of skip connections.
+
+### History
+
+### Skip Statistics
 
 
 ## Normaliser-Free ResNets
