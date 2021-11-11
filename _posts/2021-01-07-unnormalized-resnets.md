@@ -29,7 +29,7 @@ Despite the variety of normalisation methods, they all build on the same princip
 
 ### Origins
 
-The design of modern normalisation layers in neural networks was inspired by data normalisation ([Lecun et al., 1998](#lecun98efficient); [Schraudolph, 1998](#schraudolph98centering); [Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+The design of modern normalisation layers in neural networks is mainly inspired by data normalisation ([Lecun et al., 1998](#lecun98efficient); [Schraudolph, 1998](#schraudolph98centering); [Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 In the setting of a simple linear regression, it can be shown (see e.g., [Lecun et al., 1998](#lecun98efficient)) that the the second order derivative, i.e., the Hessian, of the objective is exactly the covariance of the input data, $\mathcal{D}$:
 
 $$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
@@ -144,6 +144,22 @@ Apart from a bit of historical context, we aim to provide some intuition as to w
 
 ### History
 
+_Shortcut_ or _skip connections_ are a way to allow information to bypass one or more layers in a neural network.
+Mathematically, skip connections are typically written down something like
+
+$$\boldsymbol{y} = f(\boldsymbol{x}) + \boldsymbol{x},$$
+
+where $f$ represents some non-linear transformation ([He et al., 2016a](#he16resnet)).
+However, when the outputs of the non-linear transform have different dimensions, it is typical to use a linear transformation to match the dimensions of the skip connections.
+
+Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet), [2016b](#he16preresnet)).
+However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was a thing ([Ripley, 1996](#ripley96pattern)).
+Similar to normalisation methods, skip connections can improve the condition of the optimisation problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
+Also in the forward pass, skip connections have benefits:
+e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information can flow through the network without being altered.
+[He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the linear term of the transformation can be ignored.
+
+
 ### Skip Statistics
 
 
@@ -254,6 +270,9 @@ International Conference on Learning Representations 6.</span>
 International Conference on Learning Representations 4.</span> 
 ([link](http://arxiv.org/abs/1511.06422),
  [pdf](http://arxiv.org/pdf/1511.06422.pdf))
+
+<span>Ripley, B. D. (1996). Pattern Recognition and Neural Networks. Cambridge University Press. </span> 
+([link](https://doi.org/10.1017/CBO9780511812651))
 
 <span id="salimans16weightnorm">Salimans, T., & Kingma, D. P. (2016). Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. 
 Advances in Neural Information Processing Systems, 29, 901–909.</span> 
