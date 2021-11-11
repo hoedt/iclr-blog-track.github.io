@@ -3,7 +3,6 @@ layout: post
 title: Normalisation is dead, long live normalisation!
 tags: [normalisation, initialisation, propagation]
 authors: Hoedt, Pieter-Jan, JKU; 
-
 ---
 
 Since the advent of Batch Normalisation (BN) almost every state-of-the-art (SOTA) method uses some form of normalisation.
@@ -13,7 +12,7 @@ However, [Brock et al. (2021)](#brock21characterizing) suggest that SOTA perform
 
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets for which BN happens to be especially helpful, does raise a few questions:
 
- 1. Why get rid of BN in the first place?
+ 1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN?
  3. Can this also work for other architectures?
  4. Does this allow to gain insights in why normalisation works so well?
@@ -54,14 +53,14 @@ Concretely, this is achieved by applying a typical data normalisation to every m
 
 $$\hat{\boldsymbol{x}} = \frac{\boldsymbol{x} - \boldsymbol{\mu}_\mathcal{B}}{\boldsymbol{\sigma}_\mathcal{B}}.$$
 
-Here $\boldsymbol{\mu}_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{x}$ is the mean over the inputs in the mini-batch and $\boldsymbol{\sigma}_\mathcal{B}$ is the corresponding standard deviation.
+Here $\boldsymbol{\mu}\_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum\_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{x}$ is the mean over the inputs in the mini-batch and $\boldsymbol{\sigma}_\mathcal{B}$ is the corresponding standard deviation.
 Also note that the division is element-wise and generally is numerically stabilised by some $\varepsilon$ when implemented.
 In case a zero mean and unit variance is not desired, it is also possible to apply an affine transformation $\boldsymbol{y} = \boldsymbol{\gamma} \odot \boldsymbol{x} + \boldsymbol{\beta}$ with learnable scale $(\boldsymbol{\gamma})$ and mean ($\boldsymbol{\beta}$) parameters ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 
 The above description explains the core operation of BN during training.
 However, during inference, it is not uncommon to desire predictions for single samples.
 Obviously this would cause trouble because a mini-batch with a single sample has zero variance.
-Therefore, it is common to accumulate the statistics ($\boldsymbol{\mu}_\mathcal{B}$ and $\boldsymbol{\sigma}_\mathcal{B}^2$) that are used for normalisation, during training.
+Therefore, it is common to accumulate the statistics ($\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$) that are used for normalisation, during training.
 These accumulated statistics can then be used as estimators for the mean and variance during inference.
 This makes it possible for BN to be used on single samples during inference.
 
@@ -100,7 +99,7 @@ Although BN provides important benefits, it also comes with a few downsides:
 Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
 <figure>
-    <img src="../public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods that compute statistics over different parts of the input">
+    <img src="/public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods that compute statistics over different parts of the input">
     <figcaption>
         Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
         $|\mathcal{B}|$ is the batch size, $C$ represents the number of channels/features and $S$ is the size of the signal (e.g. width times height for images).
@@ -141,7 +140,7 @@ In this sense, an SNN could already be seen as some form of _normaliser-free_ ne
 
 [Brock et al. (2021)](#brock21characterizing) mainly aim to rid residual networks (ResNets) of normalisation.
 Therefore, it probably makes sense to revisit the key component of these ResNets: _skip connections_.
-Apart from a bit of historical context, we also aim to provide some intuition as to why normalisation methods can be so helpful in the context of skip connections.
+Apart from a bit of historical context, we aim to provide some intuition as to why normalisation methods can be so helpful in the context of skip connections, and what alternatives are available.
 
 ### History
 
