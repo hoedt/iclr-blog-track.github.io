@@ -150,7 +150,7 @@ Mathematically, skip connections are typically written down something like
 $$\boldsymbol{y} = f(\boldsymbol{x}) + \boldsymbol{x},$$
 
 where $f$ represents some non-linear transformation ([He et al., 2016a](#he16resnet)).
-However, when the outputs of the non-linear transform have different dimensions, it is typical to use a linear transformation to match the dimensions of the skip connections.
+However, when the outputs of the non-linear transform have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connections with that of the output of the non-linear transform.
 
 Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet), [2016b](#he16preresnet)).
 However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was a thing ([Ripley, 1996](#ripley96pattern)).
@@ -158,6 +158,16 @@ Similar to normalisation methods, skip connections can improve the condition of 
 Also in the forward pass, skip connections have benefits:
 e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information can flow through the network without being altered.
 [He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the linear term of the transformation can be ignored.
+
+The general formulation of skip connection that we provided earlier, captures the idea of skip connections very well.
+As you might have expected, however, there are plenty of variations on the exact formulation.
+E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the skip connection is concatenated with the output of the non-linear transformation $f$ instead of aggregated by means of a sum.
+This retains more of the information for subsequent layers.
+Other variants of skip-connections make use of masks to select which information is passed on.
+Highway networks ([Srivasta et al., 2015](#srivasta15highway)) make use of a gating mechanism similar to that in Long Short-Term Memory (LSTM) ([Hochreiter et al., 1997](#hochreiter97lstm)).
+These gates enable the network to learn how information from the skip connection is to be combined with the outputs of the non-linear transformation.
+Similarly, in transformers ([Vaswani et al., 2017](#vaswani17attention)), the non-linear transformation is discarded alltogether.
+Instead, a non-linear attention mask is computed to choose which skip-connections are to be used to produce activations.
 
 
 ### Skip Statistics
@@ -221,6 +231,11 @@ In B. Leibe, J. Matas, N. Sebe, & M. Welling (Eds.), Computer Vision – ECCV 20
 ([link](https://doi.org/10.1007/978-3-319-46493-0_38),
  [pdf](https://arxiv.org/pdf/1603.05027.pdf))
 
+<span id="hochreiter97lstm">Hochreiter, S., & Schmidhuber, J. (1997). Long Short-Term Memory. 
+Neural Computation, 9(8), 1735–1780. </span> 
+([link](https://doi.org/10.1162/neco.1997.9.8.1735),
+ [pdf](https://ml.jku.at/publications/older/2604.pdf))
+
 <span id="hoffer18norm">Hoffer, E., Banner, R., Golan, I., & Soudry, D. (2018). Norm matters: Efficient and accurate normalization schemes in deep networks. 
 Advances in Neural Information Processing Systems, 31, 2160–2170. </span> 
 ([link](https://proceedings.neurips.cc/paper/2018/hash/a0160709701140704575d499c997b6ca-Abstract.html),
@@ -230,6 +245,11 @@ Advances in Neural Information Processing Systems, 31, 2160–2170. </span>
 Proceedings of the IEEE International Conference on Computer Vision, 2822–2830.</span> 
 ([link](https://doi.org/10.1109/ICCV.2017.305),
  [pdf](https://openaccess.thecvf.com/content_ICCV_2017/papers/Huang_Centered_Weight_Normalization_ICCV_2017_paper.pdf))
+
+<span id="huang17densenet">Huang, G., Liu, Z., Van Der Maaten, L., & Weinberger, K. Q. (2017). Densely Connected Convolutional Networks. 
+2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2261–2269. </span> 
+([link](https://doi.org/10.1109/CVPR.2017.243),
+ [pdf](https://openaccess.thecvf.com/content_cvpr_2017/papers/Huang_Densely_Connected_Convolutional_CVPR_2017_paper.pdf))
 
 <span id="ioffe15batchnorm">Ioffe, S., & Szegedy, C. (2015). Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. 
 Proceedings of the 32nd International Conference on Machine Learning, 37, 448–456.</span> 
@@ -289,9 +309,21 @@ In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st e
 ([link](https://doi.org/10.1007/3-540-49430-8_11),
  [pdf](https://n.schraudolph.org/pubs/Schraudolph98.pdf))
 
+<span id="srivasta15highway">Srivastava, R. K., Greff, K., & Schmidhuber, J. (2015). Training Very Deep Networks. 
+Advances in Neural Information Processing Systems, 28, 2377–2385. </span> 
+([link](https://papers.nips.cc/paper/2015/hash/215a71a12769b056c3c32e7299f1c5ed-Abstract.html), 
+ [pdf](https://papers.nips.cc/paper/2015/file/215a71a12769b056c3c32e7299f1c5ed-Paper.pdf))
+
+
 <span id="vandersmagt98solving">van der Smagt, P., & Hirzinger, G. (1998). Solving the Ill-Conditioning in Neural Network Learning. 
 In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st ed., pp. 193–206). Springer.</span> 
 ([link](https://doi.org/10.1007/3-540-49430-8_10))
+
+<span id="vaswani17attention">Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). Attention Is All You Need. 
+Advances in Neural Information Processing Systems, 30, 5998–6008.</span> 
+([link](https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html),
+ [pdf](https://proceedings.neurips.cc/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf))
+
 
 <span id="wadia21whitening">Wadia, N., Duckworth, D., Schoenholz, S. S., Dyer, E., & Sohl-Dickstein, J. (2021). Whitening and Second Order Optimization Both Make Information in the Dataset Unusable During Training, and Can Reduce or Prevent Generalization.
 Proceedings of the 38th International Conference on Machine Learning, 139, 10617–10629.</span> 
