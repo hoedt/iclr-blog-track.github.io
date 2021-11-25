@@ -84,11 +84,20 @@ An additional benefit is that BN is scale-invariant and therefore much less sens
 
 ### Alternatives
 
+<figure>
+    <img src="/public/images/data_dimensions.svg" alt="visualisation of different input data types">
+    <figcaption>
+        Figure&nbsp;1: Different input types in terms of their typical 
+        batch size ($|\mathcal{B}|$), the number of channels/features ($C$) and the <em>size</em> of the signal ($S$) (e.g. width times height for images).
+        Image inspired by (<a href="#wu18groupnorm">Wu & He, 2018</a>).
+    </figcaption>
+</figure>
+
 Although BN provides important benefits, it also comes with a few downsides:
 
  - BN does not work well with **small batch sizes** ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
    For a batch-size of one, we have zero standard deviation, but also with a few samples, the estimated statistics are often not accurate enough.
- - BN performs poorly when there are **dependencies between samples** in a mini-batch ([Ioffe, 2017](#ioffe17batchrenorm)).
+ - BN is not directly applicable to certain input types ([Ba et al. 2016](#ba16layernorm)) and performs poorly when there are **dependencies between samples** in a mini-batch ([Ioffe, 2017](#ioffe17batchrenorm)).
  - BN uses **different statistics for inference** than those used during training ([Ba et al., 2016](#ba16layernorm); [Ioffe, 2017](#ioffe17batchrenorm)).
    This is especially problematic if the distribution during inference is different or drifts away from the training distribution.
  - BN does not play well with **other regularisation** methods ([Hoffer et al., 2018](#hoffer18norm)).
@@ -98,17 +107,7 @@ Although BN provides important benefits, it also comes with a few downsides:
 
 Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
-<figure>
-    <img src="/public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods that compute statistics over different parts of the input">
-    <figcaption>
-        Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
-        $|\mathcal{B}|$ is the batch size, $C$ represents the number of channels/features and $S$ is the size of the signal (e.g. width times height for images).
-        The lightly shaded region for LN indicates how it is typically used for image data.
-        Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
-    </figcaption>
-</figure>
-
-One family of alternatives simply computes the statistics along different dimensions (see figure above).
+One family of alternatives simply computes the statistics along different dimensions (see figure&nbsp;2).
 **Layer Normalisation (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
 Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
 This makes LN invariant to weight shifts and scaling individual samples.
@@ -118,6 +117,16 @@ LN generally outperforms BN in fully connected and recurrent networks, but does 
 The idea of GN is to compute statistics over groups of features in the feature vector instead of over all features.
 For convolutional networks that should be invariant to changes in contrast, statistics can also be computed over single image channels for each sample.
 This gives rise to a technique known as **Instance Normalisation (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
+
+<figure>
+    <img src="/public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods">
+    <figcaption>
+        Figure&nbsp;2: Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
+        $|\mathcal{B}|$ is the batch size, $C$ represents the number of channels/features and $S$ is the size of the signal (e.g. width times height for images).
+        The lightly shaded region for LN indicates how it is typically used for image data.
+        Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
+    </figcaption>
+</figure>
 
 Instead of normalising the inputs, it is also possible to get a normalising effect by rescaling the weights of the network ([Arpit et al., 2016](#arpit16normprop).
 Especially in convolutional networks, this can significantly reduce the computational overhead.
