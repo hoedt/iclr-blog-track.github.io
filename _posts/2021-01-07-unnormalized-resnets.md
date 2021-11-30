@@ -13,7 +13,7 @@ However, [Brock et al. (2021)](#brock21characterizing) suggest that SOTA perform
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets for which BN happens to be especially helpful, does raise a few questions:
 
  1. Why get rid of BN in the first place[?](#alternatives)
- 2. How (easy is it) to get rid of BN?
+ 2. How (easy is it) to get rid of BN in ResNets[?](#skip-statistics)
  3. Can this also work for other architectures?
  4. Does this allow to gain insights in why normalisation works so well?
  5. Wait a second... Are they getting rid of BN or normalisation as a whole?
@@ -168,8 +168,17 @@ Also in the forward pass, skip connections have benefits:
 e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information can flow through the network without being altered.
 [He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the linear term of the transformation can be ignored.
 
+<figure>
+    <img src="/public/images/skip_connections.svg" alt="visualisation of different types of skip connections">
+    <figcaption>
+        Figure&nbsp;3: Variations on skip connections in ResNets, Densenets and Highway networks.
+        The white blocks correspond to the input / skip connection and the blue blocks correspond to the output of a non-linear transformation.
+        The greyscale blocks are values between zero and one and correspond to masks.
+    </figcaption>
+</figure>
+
 The general formulation of skip connection that we provided earlier, captures the idea of skip connections very well.
-As you might have expected, however, there are plenty of variations on the exact formulation.
+As you might have expected, however, there are plenty of variations on the exact formulation (which are illustrated in figure&nbsp;3).
 E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the skip connection is concatenated with the output of the non-linear transformation $f$ instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
 Other variants of skip-connections make use of masks to select which information is passed on.
@@ -180,6 +189,8 @@ Instead, a non-linear attention mask is computed to choose which skip-connection
 
 
 ### Skip Statistics
+
+
 
 
 ## Normaliser-Free ResNets
