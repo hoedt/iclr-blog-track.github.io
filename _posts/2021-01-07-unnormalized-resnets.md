@@ -13,7 +13,7 @@ However, [Brock et al. (2021)](#brock21characterizing) suggest that SOTA perform
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets for which BN happens to be especially helpful, does raise a few questions:
 
  1. Why get rid of BN in the first place[?](#alternatives)
- 2. How (easy is it) to get rid of BN in ResNets[?](#skip-statistics)
+ 2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
  3. Can this also work for other architectures?
  4. Does this allow to gain insights in why normalisation works so well?
  5. Wait a second... Are they getting rid of BN or normalisation as a whole?
@@ -172,7 +172,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information ca
     <img src="/public/images/skip_connections.svg" alt="visualisation of different types of skip connections">
     <figcaption>
         Figure&nbsp;3: Variations on skip connections in ResNets, Densenets and Highway networks.
-        The white blocks correspond to the input / skip connection and the blue blocks correspond to the output of a non-linear transformation.
+        The white blocks correspond to the input / skip connection and the blue blocks correspond to the output of the non-linear transformation.
         The greyscale blocks are values between zero and one and correspond to masks.
     </figcaption>
 </figure>
@@ -188,7 +188,21 @@ Similarly, in transformers ([Vaswani et al., 2017](#vaswani17attention)), the no
 Instead, a non-linear attention mask is computed to choose which skip-connections are to be used to produce activations.
 
 
-### Skip Statistics
+### Moment Control
+
+Although traditional initialisation techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, they do not work so well in ResNets.
+The key problem is that the variance must increase when the two branches are added together.
+After all, the variance is linear and unless the non-linear transformation would output a zero-variance signal, the output variance will be greater than the input variance ((Zhang et al., 2019)[#zhang19fixup]).
+Moreover, if the signal would have a strictly positive mean, the mean would start drifting as the network becomes deeper.
+By inserting normalisation layers after every residual block, these drifiting effects can effectively be alleviated.
+As a result, normalisation layers provide the tools to stabilise the propagation of mean and variance in deep ResNets.
+
+Instead of relying on batch-normalisation to correct the statistics in ResNets, it is also possible to design initialisation strategies to counter this problem.
+[Mishkin et al. (2016)](#mishkin16lsuv) show that rescaling a random orthogonal weight matrix by the empirical variance at the output of the layer makes it possible to train ResNets without BN.
+However, when correlations in the gradient signal are taken into account, it turns out that _simple scaling_ can not provide the same benefits as BN ([Balduzzi et al., 2017](#balduzzi17shattered)).
+Concretely, [Balduzzi et al. (2017)](#balduzzi17shattered) show that without BN, the gradients resemble white noise much faster in ResNets.
+In order to further stabilise training of deep ResNets, the non-linear path can be rescaled by a small value (e.g. in the range $[0.1, 0.3]$; [Szegedy et al., 2016](#szegedy16inceptionv4)).
+This effect can also be explained by the analysis of [Balduzzi et al. (2017)](#balduzzi17shattered) in Resnets _with_ BN.
 
 
 
