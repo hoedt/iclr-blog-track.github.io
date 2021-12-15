@@ -159,7 +159,7 @@ Mathematically, skip connections are typically written down something like
 $$\boldsymbol{y} = \boldsymbol{x} + f(\boldsymbol{x}),$$
 
 where $f$ represents some non-linear transformation ([He et al., 2016a](#he16resnet), [2016b](#he16preresnet)).
-This non-linear transformation is typically a sub-network that is also commonly referred to as the _residual branch_ or _residual connection_.
+This non-linear transformation is typically a sub-network that is commonly referred to as the _residual branch_ or _residual connection_.
 When the outputs of the residual branch have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connection with that of the residual connection.
 
 Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
@@ -186,26 +186,42 @@ This retains more of the information for subsequent layers.
 Other variants of skip-connections make use of masks to select which information is passed on.
 Highway networks ([Srivasta et al., 2015](#srivasta15highway)) make use of a gating mechanism similar to that in Long Short-Term Memory (LSTM) ([Hochreiter et al., 1997](#hochreiter97lstm)).
 These gates enable the network to learn how information from the skip connection is to be combined with that of the residual branch.
-Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as a highway network without the residual branch.
+Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as highway networks without a residual connection.
 Additionally, the gate of the skip connection is replaced by a more complex attention mask.
 
 
 ### Moment Control
 
-Although traditional initialisation techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, they do not work so well in ResNets.
+Traditional initialisation techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, but they do not work so well in ResNets.
 The key problem is that the variance must increase when the two branches are added together.
-After all, the variance is linear and unless the non-linear transformation would output a zero-variance signal, the output variance will be greater than the input variance ((Zhang et al., 2019)[#zhang19fixup]).
-Moreover, if the signal would have a strictly positive mean, the mean would start drifting as the network becomes deeper.
-By inserting normalisation layers after every residual block, these drifiting effects can effectively be alleviated.
-As a result, normalisation layers provide the tools to stabilise the propagation of mean and variance in deep ResNets.
+After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance will be greater than the input variance.
+Moreover, if the signal would have a strictly positive mean, also the mean would start drifting as the network becomes deeper.
+By inserting normalisation layers after every residual block, these drifiting effects can effectively be countered.
 
-Instead of relying on batch-normalisation to correct the statistics in ResNets, it is also possible to design initialisation strategies to counter this problem.
-[Mishkin et al. (2016)](#mishkin16lsuv) show that rescaling a random orthogonal weight matrix by the empirical variance at the output of the layer makes it possible to train ResNets without BN.
-However, when correlations in the gradient signal are taken into account, it turns out that _simple scaling_ can not provide the same benefits as BN ([Balduzzi et al., 2017](#balduzzi17shattered)).
-Concretely, [Balduzzi et al. (2017)](#balduzzi17shattered) show that without BN, the gradients resemble white noise much faster in ResNets.
-In order to further stabilise training of deep ResNets, the non-linear path can be rescaled by a small value (e.g. in the range $[0.1, 0.3]$; [Szegedy et al., 2016](#szegedy16inceptionv4)).
-This effect can also be explained by the analysis of [Balduzzi et al. (2017)](#balduzzi17shattered) in Resnets _with_ BN.
+Instead of relying on normalisation methods to resolve the drifting effects, it is also possible to implement other measures against these drift effects.
+Similar to standard initialisation methods, the key idea is to stabilise the variance propagation.
+To this end, a slightly modified formulation of residual networks is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
 
+$$\boldsymbol{y} = \alpha x + \beta f(\alpha x),$$
+
+which is equivalent to the traditional formulation when $\alpha = \beta = 1.$
+The key advantage of this formulation is that the variance can be controlled (to some extent) by the newly introduced scaling factors $\alpha$ and $\beta.$
+
+A very simple counter-measure to the variance explosion in ResNets is to set $\alpha = 1 / \sqrt{2}$ ([Balduzzi et al., 2017](#balduzzi17shattered)).
+Assuming that the residual branch approximately preserves the variance, the variances of $\boldsymbol{y}$ and $\boldsymbol{x}$ should be roughly the same.
+In practice, however, it seems to be more common to tune the $\beta$ factor instead of $\alpha$ ([Balduzzi et al., 2017](#balduzzi17shattered)).
+For instance, simply setting $\beta$ to some small value (e.g., in the range $[0.1, 0.3]$) can already help ResNets (with BN) to stabilise training ([Szegedy et al., 2016](#szegedy16inceptionv4)).
+It turns out that having small values for $\beta$ can help to preserve correlations between gradients, which should benefit learning ([Balduzzi et al., 2017](#balduzzi17shattered)).
+Similar findings were established through the analysis of the variance propagation in ResNets by [Hanin & Rolnick (2018)](#hanin18how).
+Eventually they propose to set $\beta = b^l$ in the $l$-th layer, with $0 < b < 1$ to make sure that the sum of scaling factors converges.
+[Arpit et al. (2019)](#arpit19how) also take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
+Also learning the scaling factor $\beta$ in each layer can make it possible to keep the variance under control ([De & Smith, 2020](#de20skipinit)).
+
+Obviously, there are also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
+One possible workaround is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
+By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
+In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
+Instead of using the reciprocal of the empirical variance as scaling factor, [Zhang et al. (2019)](#zhang19fixup) show that scaling the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
 
 
 
@@ -223,6 +239,11 @@ This effect can also be explained by the analysis of [Balduzzi et al. (2017)](#b
 Proceedings of The 33rd International Conference on Machine Learning, 48, 1168–1176.</span> 
 ([link](https://proceedings.mlr.press/v48/arpitb16.html),
  [pdf](http://proceedings.mlr.press/v48/arpitb16.pdf))
+
+<span id="arpit19how">Arpit, D., Campos, V., & Bengio, Y. (2019). How to Initialize your Network? Robust Initialization for WeightNorm & ResNets. 
+Advances in Neural Information Processing Systems, 32, 10902–10911.</span>
+([link](https://papers.nips.cc/paper/2019/hash/e520f70ac3930490458892665cda6620-Abstract.html),
+ [pdf](https://papers.nips.cc/paper/2019/file/e520f70ac3930490458892665cda6620-Paper.pdf))
 
 <span id="ba16layernorm">Ba, J. L., Kiros, J. R., & Hinton, G. E. (2016). Layer Normalization [Preprint]. </span> 
 ([link](http://arxiv.org/abs/1607.06450),
@@ -248,9 +269,19 @@ International Conference on Learning Representations 4.</span>
 ([link](http://arxiv.org/abs/1511.07289),
  [pdf](http://arxiv.org/pdf/1511.07289.pdf))
 
+<span id="de20skipinit">De, S., & Smith, S. L. (2020). Batch Normalization Biases Residual Blocks Towards the Identity Function in Deep Networks. 
+Advances in Neural Information Processing Systems, 33, 19964–19975.</span>
+([link](https://proceedings.neurips.cc//paper/2020/hash/e6b738eca0e6792ba8a9cbcba6c1881d-Abstract.html),
+ [pdf](https://proceedings.neurips.cc//paper/2020/file/e6b738eca0e6792ba8a9cbcba6c1881d-Paper.pdf))
+
 <span id="gitman17comparison">Gitman, I., & Ginsburg, B. (2017). Comparison of Batch Normalization and Weight Normalization Algorithms for the Large-scale Image Classification [Preprint]. </span> 
 ([link](http://arxiv.org/abs/1709.08145),
  [pdf](http://arxiv.org/pdf/1709.08145.pdf))
+
+<span id="hanin18how">Hanin, B., & Rolnick, D. (2018). How to Start Training: The Effect of Initialization and Architecture. 
+Advances in Neural Information Processing Systems, 31, 571–581.</span>
+([link](https://proceedings.neurips.cc/paper/2018/hash/d81f9c1be2e08964bf9f24b15f0e4900-Abstract.html),
+ [pdf](https://proceedings.neurips.cc/paper/2018/file/d81f9c1be2e08964bf9f24b15f0e4900-Paper.pdf))
 
 <span id="he15delving">He, K., Zhang, X., Ren, S., & Sun, J. (2015). Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. 
 Proceedings of the IEEE International Conference on Computer Vision, 1026–1034.</span> 
@@ -350,6 +381,9 @@ Advances in Neural Information Processing Systems, 28, 2377–2385. </span>
 ([link](https://papers.nips.cc/paper/2015/hash/215a71a12769b056c3c32e7299f1c5ed-Abstract.html), 
  [pdf](https://papers.nips.cc/paper/2015/file/215a71a12769b056c3c32e7299f1c5ed-Paper.pdf))
 
+<span id="szegedy16inceptionv4">Szegedy, C., Ioffe, S., Vanhoucke, V., & Alemi, A. (2016). Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning [Preprint].</span>
+([link](http://arxiv.org/abs/1602.07261),
+ [pdf](http://arxiv.org/pdf/1602.07261.pdf))
 
 <span id="vandersmagt98solving">van der Smagt, P., & Hirzinger, G. (1998). Solving the Ill-Conditioning in Neural Network Learning. 
 In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st ed., pp. 193–206). Springer.</span> 
