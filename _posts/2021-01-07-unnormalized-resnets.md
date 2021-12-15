@@ -156,12 +156,13 @@ Apart from a bit of historical context, we aim to provide some intuition as to w
 _Shortcut_ or _skip connections_ are a way to allow information to bypass one or more layers in a neural network.
 Mathematically, skip connections are typically written down something like
 
-$$\boldsymbol{y} = f(\boldsymbol{x}) + \boldsymbol{x},$$
+$$\boldsymbol{y} = \boldsymbol{x} + f(\boldsymbol{x}),$$
 
-where $f$ represents some non-linear transformation ([He et al., 2016a](#he16resnet)).
-However, when the outputs of the non-linear transform have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connections with that of the output of the non-linear transform.
+where $f$ represents some non-linear transformation ([He et al., 2016a](#he16resnet), [2016b](#he16preresnet)).
+This non-linear transformation is typically a sub-network that is also commonly referred to as the _residual branch_ or _residual connection_.
+When the outputs of the residual branch have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connection with that of the residual connection.
 
-Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet), [2016b](#he16preresnet)).
+Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
 However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was a thing ([Ripley, 1996](#ripley96pattern)).
 Similar to normalisation methods, skip connections can improve the condition of the optimisation problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
 Also in the forward pass, skip connections have benefits:
@@ -178,14 +179,15 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information ca
 </figure>
 
 The general formulation of skip connection that we provided earlier, captures the idea of skip connections very well.
-As you might have expected, however, there are plenty of variations on the exact formulation (which are illustrated in figure&nbsp;3).
-E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the skip connection is concatenated with the output of the non-linear transformation $f$ instead of aggregated by means of a sum.
+As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in figure&nbsp;3).
+Strictly speaking, even [He et al., (2016a)](#he16resnet) do not strictly adhere to their own formulation because they use an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016](#he16preresnet)).
+E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections is concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
 Other variants of skip-connections make use of masks to select which information is passed on.
 Highway networks ([Srivasta et al., 2015](#srivasta15highway)) make use of a gating mechanism similar to that in Long Short-Term Memory (LSTM) ([Hochreiter et al., 1997](#hochreiter97lstm)).
-These gates enable the network to learn how information from the skip connection is to be combined with the outputs of the non-linear transformation.
-Similarly, in transformers ([Vaswani et al., 2017](#vaswani17attention)), the non-linear transformation is discarded alltogether.
-Instead, a non-linear attention mask is computed to choose which skip-connections are to be used to produce activations.
+These gates enable the network to learn how information from the skip connection is to be combined with that of the residual branch.
+Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as a highway network without the residual branch.
+Additionally, the gate of the skip connection is replaced by a more complex attention mask.
 
 
 ### Moment Control
