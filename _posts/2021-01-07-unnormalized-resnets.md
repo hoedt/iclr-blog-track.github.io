@@ -221,7 +221,7 @@ Obviously, there are also workarounds that do not quite fit the general formulat
 One possible workaround is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
-Instead of using the reciprocal of the empirical variance as scaling factor, [Zhang et al. (2019)](#zhang19fixup) show that scaling the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
+Instead of using the reciprocal of the empirical variance as scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
 
 
 ## Normaliser-Free ResNets
@@ -238,9 +238,11 @@ With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al.
 Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering the initialisation of the weights.
 Getting rid of BN in ResNets has been posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
 The main idea of FixUp is to scale the weights in the $k$-th layer in each residual branch by $L^{-1/(2k-2)}$.
-Moreover, they set the initial weights for the last layer in each residual branch to zero and introduce learnable $\beta$ scaling factors as well as scalar biases in front of every layer.
+Moreover, they set the initial weights for the last layer in each residual branch to zero and introduce learnable $\beta$ scaling factors as well as scalar biases before every layer in the network.
 With these tricks, Zhang et al. are able to show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalisation.
-
+Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
+The key difference with FixUp is that the initial value for the learnable $\beta$ parameter must be less than $1 / \sqrt{L}.$
+In return, SkipInit does not require the rescaling of initial weights in the residual branch or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
 
 ## Insights
 
