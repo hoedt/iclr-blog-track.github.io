@@ -215,7 +215,7 @@ It turns out that having small values for $\beta$ can help to preserve correlati
 Similar findings were established through the analysis of the variance propagation in ResNets by [Hanin & Rolnick (2018)](#hanin18how).
 Eventually they propose to set $\beta = b^l$ in the $l$-th layer, with $0 < b < 1$ to make sure that the sum of scaling factors converges.
 [Arpit et al. (2019)](#arpit19how) also take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
-Also learning the scaling factor $\beta$ in each layer can make it possible to keep the variance under control ([De & Smith, 2020](#de20skipinit)).
+Also learning the scaling factor $\beta$ in each layer can make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
 Obviously, there are also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
 One possible workaround is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
@@ -224,8 +224,22 @@ In some sense, this approach can be interpreted as choosing a scaling factor for
 Instead of using the reciprocal of the empirical variance as scaling factor, [Zhang et al. (2019)](#zhang19fixup) show that scaling the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
 
 
-
 ## Normaliser-Free ResNets
+
+In some sense, it could be argued that the current popularity of skip connections is due to BN, rather than ResNets.
+After all, without BN the skip connections in ResNets would have suffered from the drifting effects discussed earlier and ResNets would probably not have become so popular.
+However, BN does have a few practical issues (see [earlier](#alternatives)) and the drifting effects can be controlled using other techniques.
+Therefore, it seems natural to find out whether it is possible to replace BN by one of these other techniques to get the best of both worlds.
+
+### Preliminary Work
+
+The idea of training ResNets without BN is practically as old as ResNets themselves.
+With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialisation for small datasets (CIFAR-10).
+Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering the initialisation of the weights.
+Getting rid of BN in ResNets has been posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
+The main idea of FixUp is to scale the weights in the $k$-th layer in each residual branch by $L^{-1/(2k-2)}$.
+Moreover, they set the initial weights for the last layer in each residual branch to zero and introduce learnable $\beta$ scaling factors as well as scalar biases in front of every layer.
+With these tricks, Zhang et al. are able to show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalisation.
 
 
 ## Insights
