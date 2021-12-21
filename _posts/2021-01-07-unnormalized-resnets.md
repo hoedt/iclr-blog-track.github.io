@@ -84,7 +84,7 @@ An additional benefit is that BN is scale-invariant and therefore much less sens
 
 ### Alternatives
 
-<figure>
+<figure id="fig_dims">
     <img src="/public/images/data_dimensions.svg" alt="visualisation of different input data types">
     <figcaption>
         Figure&nbsp;1: Different input types in terms of their typical 
@@ -107,7 +107,7 @@ Although BN provides important benefits, it also comes with a few downsides:
 
 Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
-One family of alternatives simply computes the statistics along different dimensions (see figure&nbsp;2).
+One family of alternatives simply computes the statistics along different dimensions (see figure&nbsp;[2](#fig_norm)).
 **Layer Normalisation (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
 Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
 This makes LN invariant to weight shifts and scaling individual samples.
@@ -118,7 +118,7 @@ The idea of GN is to compute statistics over groups of features in the feature v
 For convolutional networks that should be invariant to changes in contrast, statistics can also be computed over single image channels for each sample.
 This gives rise to a technique known as **Instance Normalisation (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
 
-<figure>
+<figure id="fig_norm">
     <img src="/public/images/normalisation_dimensions.svg" alt="visualisation of normalisation methods">
     <figcaption>
         Figure&nbsp;2: Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
@@ -169,7 +169,7 @@ Also in the forward pass, skip connections have benefits:
 e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information can flow through the network without being altered.
 [He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the linear term of the transformation can be ignored.
 
-<figure>
+<figure id="fig_skip">
     <img src="/public/images/skip_connections.svg" alt="visualisation of different types of skip connections">
     <figcaption>
         Figure&nbsp;3: Variations on skip connections in ResNets, Densenets and Highway networks.
@@ -179,7 +179,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information ca
 </figure>
 
 The general formulation of skip connection that we provided earlier, captures the idea of skip connections very well.
-As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in figure&nbsp;3).
+As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in figure&nbsp;[3](#fig_skip)).
 Strictly speaking, even [He et al., (2016a)](#he16resnet) do not strictly adhere to their own formulation because they use an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016](#he16preresnet)).
 E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections is concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
@@ -231,7 +231,7 @@ After all, without BN the skip connections in ResNets would have suffered from t
 However, BN does have a few practical issues (see [earlier](#alternatives)) and the drifting effects can be controlled using other techniques.
 Therefore, it seems natural to find out whether it is possible to replace BN by one of these other techniques to get the best of both worlds.
 
-### Preliminary Work
+### Prior Work
 
 The idea of training ResNets without BN is practically as old as ResNets themselves.
 With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialisation for small datasets (CIFAR-10).
@@ -243,6 +243,32 @@ With these tricks, Zhang et al. are able to show that FixUp can provide _almost_
 Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
 The key difference with FixUp is that the initial value for the learnable $\beta$ parameter must be less than $1 / \sqrt{L}.$
 In return, SkipInit does not require the rescaling of initial weights in the residual branch or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
+
+### Current Work
+
+Although the results of prior works look promising, there is still a performance gap compared to ResNets with BN.
+To close this gap, [Brock et al. (2021)](#brock21characterizing) suggest to study the propagtion of mean and variance through ResNets by means of so-called Signal Propagation Plots (SPPs).
+These SPPs simply visualise the squared mean and variance of the activations after each skip connection.
+Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
+First of all, the SPPs on the left side clearly illustrate that BN transforms the exponential growth to a linear propagation in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
+When focusing on ResNets with BN (on the ride sight), it is clear that mean and variance are reduced after every layer, each of which consists of a few skip connections.
+This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted after every layer in these ResNets.
+
+<figure id="fig_spp">
+    <img src="/public/images/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray line) and one for ResNets without (approximately flat blue line) Batch Normalisation on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch.">
+    <figcaption>
+        Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50.
+        SPPs plot the mean and variance ($y$-axis) of the pre-activations after each skip connection ($x$-axis).
+        The left plot illustrates the difference between ResNets with and without BN layers.
+        The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling.
+        Note that ResNet-50 has four layers with 3, 4, 6 and 3 residual branches, respectively.
+    </figcaption>
+</figure>
+
+
+
+### Future Work
+
 
 ## Insights
 
