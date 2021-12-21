@@ -265,6 +265,15 @@ This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted
     </figcaption>
 </figure>
 
+The goal of Normaliser-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets, while preserving the characteristics visualised in the SPPs ([Brock et al., 2021](#brock21characterizing)).
+To get rid of the exponential increase in variance in unnormalised ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
+This effectively implements the scaling that is normally a part of BN.
+Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
+This is possible if the inputs to the network are properly normalised (i.e., have unit variance) and the residual branch, $f$, is properly initialised (i.e., preserves variance).
+Although this scheme should allow to reduce the variance after every skip-connection, it is only used after every layer, which typically consists of multiple skip-connections.
+For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and not on the skip connection, such that $\boldsymbol{y} = x + \beta f(\alpha x).$
+This is necessary to imitate the variance drops in the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see figure&nbsp;[4](#fig_spp)).
+The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
 ### Future Work
 
