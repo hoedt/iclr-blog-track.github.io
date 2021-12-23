@@ -297,6 +297,10 @@ The effect of including CWN in NF-ResNets is illustrated in the right part of fi
 
 ### Future Work
 
+Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets **with** standard regularisation methods perform on par with traditional ResNets with BN.
+When additionally taking into account the computational demands, NF-RegNets also come close to EfficientNet etc.
+Although these results imply that no performance gains must be expected from chaning from BN to NF-ResNets, follow-up work does show that NF-ResNets with gradient clipping are able to compete with EfficientNets ([Brock et al., 2021b](#brock21high-performance)).
+<!--TODO: flesh out (also, 2021a and 2021b!) -->
 
 ## Insights
 
