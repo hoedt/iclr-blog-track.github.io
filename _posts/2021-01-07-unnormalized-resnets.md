@@ -128,7 +128,7 @@ This gives rise to a technique known as **Instance Normalisation (IN)**, which p
     </figcaption>
 </figure>
 
-Instead of normalising the inputs, it is also possible to get a normalising effect by rescaling the weights of the network ([Arpit et al., 2016](#arpit16normprop).
+Instead of normalising the inputs, it is also possible to get a normalising effect by rescaling the weights of the network ([Arpit et al., 2016](#arpit16normprop)).
 Especially in convolutional networks, this can significantly reduce the computational overhead.
 With **Weight Normalisation (WN)** ([Salimans & Kingma, 2016](#salimans16weightnorm)), the weight vectors for each neuron are normalised to have unit norm.
 This idea can also be found in a(n independently developed) technique called **Normalisation Propagation (NP)** ([Arpit et al., 2016](#arpit16normprop)).
@@ -275,6 +275,25 @@ Although this scheme should allow to reduce the variance after every skip-connec
 For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and not on the skip connection, such that $\boldsymbol{y} = x + \beta f(\alpha x).$
 This is necessary to imitate the variance drops in the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see figure&nbsp;[4](#fig_spp)).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
+
+<figure id="fig_nfresnet">
+    <img src="/public/images/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalisation (gray lines) and one for a Normaliser-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
+    <figcaption>
+        Figure&nbsp;5: SPPs comparing a NF-ResNet-50 to a Resnet with BN at initialisation.
+        The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters.
+        The right plot displays the behaviour of a NF-ResNet with Centred Weight Normalisation.
+        Note that for the right plot, the scale for the SPPs is practically defined by the residual variance.
+    </figcaption>
+</figure>
+
+As can be seen on the left plot in figure&nbsp;[5](#fig_nfresnet), a plain NF-ResNet effectively mimics the variance propagation of the baseline ResNet pretty accurately.
+The propagation of the squared mean in NF-ResNets, on the other hand, looks nothing like that from the BN model.
+After all, the considerations that lead to the scaling parameters only considers the variance paropagation.
+On top of that, it turns out that the variance of the residual branches (right before it is merged with the skip connection) is not particularly steady.
+This indicates that the residual branches might not properly preserve variance, which is necessary for the analytic computations of $\alpha$ to be correct.
+It turns out that both of these discrepancies can be resolved by introducing a variant of Centred Weight Normalisation (CWN; [L. Huang et al., 2017](#huang17centred)) to NF-ResNets.
+CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and variance can propagate steadily.
+The effect of including CWN in NF-ResNets is illustrated in the right part of figure&nbsp;[5](#fig_nfresnet).
 
 ### Future Work
 
