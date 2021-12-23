@@ -91,8 +91,8 @@
   </g>
   <g id="highway" transform="translate(375, 0)">
     <g>
-      <rect class="mask" x="45" y="7.5" width="15" height="15" style="fill: black;" />
-      <rect class="mask" x="60" y="7.5" width="15" height="15" style="fill: white;" />
+      <rect class="mask" x="45" y="7.5" width="15" height="15" style="fill: #0f0f0f;" />
+      <rect class="mask" x="60" y="7.5" width="15" height="15" style="fill: #f0f0f0;" />
       <rect class="mask" x="75" y="7.5" width="15" height="15" style="fill: #404040;" />
       <rect class="mask" x="90" y="7.5" width="15" height="15" style="fill: #808080;" />
     </g>
@@ -110,8 +110,8 @@
       <rect class="nonlinear" x="90" y="82.5" width="15" height="15" />
     </g>
     <g>
-      <rect class="mask" x="45" y="107.5" width="15" height="15" style="fill: white;" />
-      <rect class="mask" x="60" y="107.5" width="15" height="15" style="fill: black;" />
+      <rect class="mask" x="45" y="107.5" width="15" height="15" style="fill: #f0f0f0;" />
+      <rect class="mask" x="60" y="107.5" width="15" height="15" style="fill: #0f0f0f;" />
       <rect class="mask" x="75" y="107.5" width="15" height="15" style="fill: #c0c0c0;" />
       <rect class="mask" x="90" y="107.5" width="15" height="15" style="fill: #808080" />
     </g>
@@ -128,8 +128,8 @@
   <g id="attention" transform="matrix(1, 0, 0, 1, 225, -200)">
     <g>
       <rect class="mask" x="60" y="35" width="15" height="15" style="fill: #c0c0c0;" />
-      <rect class="mask" x="60" y="50" width="15" height="15" style="fill: black;" />
-      <rect class="mask" x="75" y="50" width="15" height="15" style="fill: white;" />
+      <rect class="mask" x="60" y="50" width="15" height="15" style="fill: #0f0f0f;" />
+      <rect class="mask" x="75" y="50" width="15" height="15" style="fill: #f0f0f0;" />
       <rect class="mask" x="75" y="35" width="15" height="15" style="fill: #404040;" />
     </g>
     <g>

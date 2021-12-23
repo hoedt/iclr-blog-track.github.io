@@ -228,7 +228,7 @@ Instead of using the reciprocal of the empirical variance as scaling factor, [Zh
 
 In some sense, it could be argued that the current popularity of skip connections is due to BN, rather than ResNets.
 After all, without BN the skip connections in ResNets would have suffered from the drifting effects discussed earlier and ResNets would probably not have become so popular.
-However, BN does have a few practical issues (see [earlier](#alternatives)) and the drifting effects can be controlled using other techniques.
+However, BN does have a few practical issues (see [earlier](#alternatives)) and it does seem to be the case that the drifting effects can be controlled using other techniques.
 Therefore, it seems natural to find out whether it is possible to replace BN by one of these other techniques to get the best of both worlds.
 
 ### Prior Work
@@ -236,6 +236,7 @@ Therefore, it seems natural to find out whether it is possible to replace BN by 
 The idea of training ResNets without BN is practically as old as ResNets themselves.
 With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialisation for small datasets (CIFAR-10).
 Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering the initialisation of the weights.
+
 Getting rid of BN in ResNets has been posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
 The main idea of FixUp is to scale the weights in the $k$-th layer in each residual branch by $L^{-1/(2k-2)}$.
 Moreover, they set the initial weights for the last layer in each residual branch to zero and introduce learnable $\beta$ scaling factors as well as scalar biases before every layer in the network.
@@ -251,14 +252,14 @@ To close this gap, [Brock et al. (2021)](#brock21characterizing) suggest to stud
 These SPPs simply visualise the squared mean and variance of the activations after each skip connection, as well as the variance at the end of every residual branch (before the skip connection).
 Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
 First of all, the SPPs on the left side clearly illustrate that BN transforms the exponential growth to a linear propagation in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
-When focusing on ResNets with BN (on the ride sight), it is clear that mean and variance are reduced after every layer, each of which consists of a few skip connections.
+When focusing on ResNets with BN (on the right side), it is clear that mean and variance are reduced after every layer, each of which consists of a few skip connections.
 This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted after every layer in these ResNets.
 
 <figure id="fig_spp">
-    <img src="/public/images/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray line) and one for ResNets without (approximately flat blue line) Batch Normalisation on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
+    <img src="/public/images/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalisation on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
     <figcaption>
-        Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50.
-        SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$).
+        Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50 at initialisation.
+        SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$, $y$-axis on the right).
         The left plot illustrates the difference between ResNets with and without BN layers.
         The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling.
         Note that ResNet-50 has four layers with 3, 4, 6 and 3 residual branches, respectively.
