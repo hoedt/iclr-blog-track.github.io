@@ -298,14 +298,21 @@ It turns out that both of these discrepancies can be resolved by introducing a v
 CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and variance can propagate steadily.
 The effect of including CWN in NF-ResNets is illustrated in the right part of figure&nbsp;[5](#fig_nfresnet).
 
-### Future Work
+### NF-ResNets vs BN
 
-Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets **with** standard regularisation methods perform on par with traditional ResNets with BN.
-When additionally taking into account the computational demands, NF-RegNets also come close to EfficientNet etc.
-Although these results imply that no performance gains must be expected from chaning from BN to NF-ResNets, follow-up work does show that NF-ResNets with gradient clipping are able to compete with EfficientNets ([Brock et al., 2021b](#brock21highperformance)).
-<!--TODO: flesh out (also, 2021a and 2021b!) -->
+Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets **with** standard regularisation methods perform on par with traditional ResNets that are using BN.
+An important [detail](https://github.com/deepmind/deepmind-research/blob/ba761289c157fc151c7f06aa37b812d8100561db/nfnets/resnet.py#L158-L159) that is not apparent from the text, however, is that the traditional ResNets use the "_BN -> ReLU_" order instead of the "_ReLU -> BN_" order, which served as model for the variance propagation for NF-ResNets.
+This is why the SPPs in figure&nbsp;[5](#fig_nfresnet), which depict the "_ReLU -> BN_" order, do not perfectly overlap, unlike the figures in ([Brock et al., 2021a](#borck21characterizing)).
+Also, the additional regularisation is necessary to account for the _implicit_ regularisation effects that are attributed to BN.
 
-## Insights
+Because BN does induce computational overhead, it seems natural to expect NF-ResNets to allow for more computationally efficient models.
+Therefore, [Brock et al. (2021a)](#brock21characterizing) also compare NF-ResNets with a set of architectures that are optimised for efficiency.
+However, it turns out that some of these architectures do not play well with the weight normalisation that is typically used in NF-ResNets.
+As a result, NF-ResNets are unable to outperform EfficientNets ([Tan & Le, 2019](#tan19efficientnet)).
+However, they do illustrate that the performance gap between EfficientNets and (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)) can be reduced by introducing the NF-ResNet scheme.
+In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
+
+## Discussion
 
 
 ---
@@ -439,7 +446,12 @@ International Conference on Learning Representations 4.</span>
 ([link](http://arxiv.org/abs/1511.06422),
  [pdf](http://arxiv.org/pdf/1511.06422.pdf))
 
-<span>Ripley, B. D. (1996). Pattern Recognition and Neural Networks. Cambridge University Press. </span> 
+<span id="radosavovic20regnet">Radosavovic, I., Kosaraju, R. P., Girshick, R., He, K., & Dollár, P. (2020). Designing Network Design Spaces. 
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 10425–10433.</span>
+([link](https://doi.org/10.1109/CVPR42600.2020.01044),
+ [pdf](https://openaccess.thecvf.com/content_CVPR_2020/papers/Radosavovic_Designing_Network_Design_Spaces_CVPR_2020_paper.pdf))
+
+<span id="ripley96pattern">Ripley, B. D. (1996). Pattern Recognition and Neural Networks. Cambridge University Press. </span> 
 ([link](https://doi.org/10.1017/CBO9780511812651))
 
 <span id="salimans16weightnorm">Salimans, T., & Kingma, D. P. (2016). Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks. 
