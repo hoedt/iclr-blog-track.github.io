@@ -222,6 +222,9 @@ One possible workaround is to make use of an empirical approach to weight initia
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
 Instead of using the reciprocal of the empirical variance as scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
+[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha x + \beta f(x),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection and $c$ is some constant, which was chosen to be the number of residual branches, $L$.
+Similar to setting $\alpha = 1 / \sqrt{2},$ this effectively counters the variance explosion.
+On top of that, these factors should assure that the outputs of residual branches are weighted similarly, independent of their depth.
 
 
 ## Normaliser-Free ResNets
