@@ -8,7 +8,7 @@ authors: Anonymous;
 Since the advent of Batch Normalisation (BN) almost every state-of-the-art (SOTA) method uses some form of normalisation.
 After all, normalisation generally speeds up learning and leads to models that generalise better than their unnormalised counterparts.
 This turns out to be especially useful when using some form of skip connections, which are prominent in residual networks (ResNets), for example.
-However, [Brock et al. (2021)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalisation**!
+However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalisation**!
 
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets for which BN happens to be especially helpful, does raise a few questions:
 
@@ -18,7 +18,7 @@ The fact that Brock et al. went out of their way to get rid of something as simp
  4. Does this allow to gain insights in why normalisation works so well?
  5. Wait a second... Are they getting rid of BN or normalisation as a whole?
 
-The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021)](#brock21characterizing).
+The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
 
 ## Normalisation
@@ -147,7 +147,7 @@ In this sense, an SNN could already be seen as some form of _normaliser-free_ ne
 
 ## Skip Connections
 
-[Brock et al. (2021)](#brock21characterizing) mainly aim to rid residual networks (ResNets) of normalisation.
+[Brock et al. (2021a)](#brock21characterizing) mainly aim to rid residual networks (ResNets) of normalisation.
 Therefore, it probably makes sense to revisit the key component of these ResNets: _skip connections_.
 Apart from a bit of historical context, we aim to provide some intuition as to why normalisation methods can be so helpful in the context of skip connections, and what alternatives are available.
 
@@ -251,7 +251,7 @@ In return, SkipInit does not require the rescaling of initial weights in the res
 ### Current Work
 
 Although the results of prior works look promising, there is still a performance gap compared to ResNets with BN.
-To close this gap, [Brock et al. (2021)](#brock21characterizing) suggest to study the propagation of mean and variance through ResNets by means of so-called Signal Propagation Plots (SPPs).
+To close this gap, [Brock et al. (2021a)](#brock21characterizing) suggest to study the propagation of mean and variance through ResNets by means of so-called Signal Propagation Plots (SPPs).
 These SPPs simply visualise the squared mean and variance of the activations after each skip connection, as well as the variance at the end of every residual branch (before the skip connection).
 Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
 First of all, the SPPs on the left side clearly illustrate that BN transforms the exponential growth to a linear propagation in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
@@ -269,7 +269,7 @@ This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted
     </figcaption>
 </figure>
 
-The goal of Normaliser-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets, while preserving the characteristics visualised in the SPPs ([Brock et al., 2021](#brock21characterizing)).
+The goal of Normaliser-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets, while preserving the characteristics visualised in the SPPs ([Brock et al., 2021a](#brock21characterizing)).
 To get rid of the exponential increase in variance in unnormalised ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
 This effectively implements the scaling that is normally a part of BN.
 Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
@@ -302,7 +302,7 @@ The effect of including CWN in NF-ResNets is illustrated in the right part of fi
 
 Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets **with** standard regularisation methods perform on par with traditional ResNets with BN.
 When additionally taking into account the computational demands, NF-RegNets also come close to EfficientNet etc.
-Although these results imply that no performance gains must be expected from chaning from BN to NF-ResNets, follow-up work does show that NF-ResNets with gradient clipping are able to compete with EfficientNets ([Brock et al., 2021b](#brock21high-performance)).
+Although these results imply that no performance gains must be expected from chaning from BN to NF-ResNets, follow-up work does show that NF-ResNets with gradient clipping are able to compete with EfficientNets ([Brock et al., 2021b](#brock21highperformance)).
 <!--TODO: flesh out (also, 2021a and 2021b!) -->
 
 ## Insights
@@ -336,10 +336,14 @@ Advances in Neural Information Processing Systems, 31, 7694–7705. </span>
 ([link](https://proceedings.neurips.cc/paper/2018/hash/36072923bfc3cf47745d704feb489480-Abstract.html),
  [pdf](https://proceedings.neurips.cc/paper/2018/file/36072923bfc3cf47745d704feb489480-Paper.pdf))
 
-<span id="brock21characterizing">Brock, A., De, S., & Smith, S. L. (2021). Characterizing signal propagation to close the performance gap in unnormalized ResNets. 
+<span id="brock21characterizing">Brock, A., De, S., & Smith, S. L. (2021a). Characterizing signal propagation to close the performance gap in unnormalized ResNets. 
 International Conference on Learning Representations 9.</span>
 ([link](https://openreview.net/forum?id=IX3Nnir2omJ),
  [pdf](https://openreview.net/pdf?id=IX3Nnir2omJ))
+
+<span id="brock21highperformance">Brock, A., De, S., Smith, S. L., & Simonyan, K. (2021b). High-Performance Large-Scale Image Recognition Without Normalization [Preprint].</span>
+([link](http://arxiv.org/abs/2102.06171),
+ [pdf](http://arxiv.org/pdf/2102.06171.pdf))
 
 <span id="clevert16elu">Clevert, D.-A., Unterthiner, T., & Hochreiter, S. (2016). Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs). 
 International Conference on Learning Representations 4.</span> 
@@ -452,6 +456,11 @@ Advances in Neural Information Processing Systems, 31, 2483–2493.</span>
 In G. B. Orr & K.-R. Müller (Eds.), Neural Networks: Tricks of the Trade (1st ed., pp. 207–226). Springer.</span> 
 ([link](https://doi.org/10.1007/3-540-49430-8_11),
  [pdf](https://n.schraudolph.org/pubs/Schraudolph98.pdf))
+
+<span id="shao20rescalenet">Shao, J., Hu, K., Wang, C., Xue, X., & Raj, B. (2020). Is normalization indispensable for training deep neural network? 
+Advances in Neural Information Processing Systems, 33, 13434–13444.</span>
+([link](https://proceedings.neurips.cc/paper/2020/hash/9b8619251a19057cff70779273e95aa6-Abstract.html),
+ [pdf](https://proceedings.neurips.cc/paper/2020/file/9b8619251a19057cff70779273e95aa6-Paper.pdf))
 
 <span id="srivasta15highway">Srivastava, R. K., Greff, K., & Schmidhuber, J. (2015). Training Very Deep Networks. 
 Advances in Neural Information Processing Systems, 28, 2377–2385. </span> 
