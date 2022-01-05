@@ -14,8 +14,8 @@ The fact that Brock et al. went out of their way to get rid of something as simp
 
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
- 3. Can this also work for other architectures[?]
- 4. Does this allow to gain insights into why normalisation works so well[?](#discussion)
+ 3. Can this also work for other architectures[?](#limitations)
+ 4. Does this allow to gain insights into why normalisation works so well[?](#normalisation-insights)
  5. Wait a second... Are they getting rid of normalisation or just BN?
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
