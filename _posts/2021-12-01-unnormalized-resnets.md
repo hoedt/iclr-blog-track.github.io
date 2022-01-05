@@ -14,9 +14,9 @@ The fact that Brock et al. went out of their way to get rid of something as simp
 
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
- 3. Can this also work for other architectures?
- 4. Does this allow to gain insights in why normalisation works so well?
- 5. Wait a second... Are they getting rid of BN or normalisation as a whole?
+ 3. Can this also work for other architectures[?]
+ 4. Does this allow to gain insights in why normalisation works so well[?](#discussion)
+ 5. Wait a second... Are they getting rid of normalisation or just BN?
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
@@ -77,7 +77,7 @@ Also [Ioffe & Szegedy (2015)](#ioffe15batchnorm) seem to have realised that simp
  $$\nabla_{\boldsymbol{x}} L = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
 
 where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} L$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
-Note that this directly corresponds to centering the gradients, which should also improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
+Note that this directly corresponds to centring the gradients, which should also improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
 
 In the end, everyone seems to agree that one of the main beneftis of BN is that it enables higher learning rates ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
 An additional benefit is that BN is scale-invariant and therefore much less sensitive to weight initialisation ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
@@ -314,6 +314,37 @@ In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF
 
 ## Discussion
 
+NF-ResNets show that it is actually possible to build networks without BN that are able to achieve competitive prediction performance.
+However, it does not look like this scheme would be capable of making BN entirely obsolete.
+Therefore, it probably makes sense to take a closer look at what the limitations of NF-ResNets are and what they can learn us about the mechanisms that make BN so successful.
+
+### Limitations
+
+First of all, the exact procedure for scaling residual branches is only meaningful for architectures that include (some sort of) skip connections.
+Therefore, it does not make sense to apply the core idea behind NF-ResNets to get rid of BN layers in arbitrary architectures.
+Furthermore, NF-ResNets still rely on normalisation methods to attain good performance &mdash; in contrast to what their name might suggest.
+[Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalisation_, but they do rely on Weight Normalisation techniques to replace BN everywhere.
+In this sense, it is arguable whether NF-ResNets are truly normaliser-free.
+Finally, some of the problems with BN are not resolved or reintroduced when building competitive NF-ResNets.
+There are still differences between training and testing when using dropout regularisation, but CWN also introduces a certain computational overhead during training.
+
+### Normalisation Insights
+
+In the end, a NF-ResNet can be interpreted as consisting of different components that model parts of what BN normally does.
+For examle, the $\alpha$ scaling factor used in NF-ResNets obviously models the division by the standard deviation of BN.
+It is also easy to see that the impliciat regularisation that is attributed to BN can be replaced by explicit regularisation schemes.
+Furthermore, the subtraction by the mean in BN is practically implemented by means of  the weight centring in CWN.
+Also the scale-invariance of the weights of BN is re-introduced by means of CWN.
+The input scale-invariance that BN introduces in each layer, on the other hand, is lost when using CWN.
+When considering the entire residual branch (or network), however, $\alpha$ does enable some sort of scale-invariance for the entirety of this branch (or network).
+Finally, the affine transformation after the normalisation in BN are modelled by scaling the result of CWN.
+Note that the affine shift does not need to be modelled explicitly, since CWN does not annihilate the regular bias parameters of the layers it acts upon, in contrast to BN.
+
+Although the effects of BN on the forward pass seem to be modeled well by NF-ResNets, the effects on the backward pass seem to be largely ignored by [Brock et al. (2021a)](#brock21characterizing).
+Follow-up work by [Brock et al. (2021b)](#brock21highperformance) suggests that these effects might not be unimportant.
+After all, the gradient flow in NF-ResNets is only affected by the scaling factors, since CWN does not affect the gradients w.r.t. the inputs.
+Therefore, regular NF-ResNets have no way to apply the gradient centring ([Schraudolph, 1998](#schraudolph98centering)) that is inherent to BN layers.
+However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to the gradient dynamics imposed by BN.
 
 ---
 
