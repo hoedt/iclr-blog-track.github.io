@@ -346,6 +346,17 @@ After all, the gradient flow in NF-ResNets is only affected by the scaling facto
 Therefore, regular NF-ResNets have no way to apply the gradient centring ([Schraudolph, 1998](#schraudolph98centering)) that is inherent to BN layers.
 However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to the gradient dynamics imposed by BN.
 
+### Conclusion
+
+NF-ResNets show that it is possible to get rid of BN in ResNets without diminishing predictive performance.
+However, NF-ResNets still rely on weight normalisation schemes to make the models competitive with their BN counterparts.
+Therefore, it could be argued that NF-ResNets are not entirely _normaliser-free_.
+As a matter of fact, it almost seems as if NF-ResNets show that it is possible to imitate BN using different components, rather than how to really get rid of it.
+This also means that it is hard to distill meaningful insights as to why/how BN works so well.
+One thing that this approach does make clear is that the backward dynamics due to BN should be part of the explanation.
+
+**TL;DR:** NF-ResNets, rescaled ResNets with Centred Weight Normalisation, can be used to immitate the forward pass of ResNets with BN, but they do not really help to explain what makes BN so successful.
+
 ---
 
 ## References
