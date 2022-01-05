@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Normalisation is dead, long live normalisation!
-tags: [normalisation, initialisation, propagation]
+tags: [normalization, initialization, propagation]
 authors: Anonymous; 
 ---
 
@@ -20,6 +20,25 @@ The fact that Brock et al. went out of their way to get rid of something as simp
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
+## Table of Contents
+
+ - [Normalisation](#normalisation)
+    * [Origins](#origins)
+    * [Batch Normalisation](#batch-normalisation)
+    * [Alternatives](#alternatives)
+ - [Skip Connections](#skip-connections)
+    * [History](#history)
+    * [Moment Control](#moment-control)
+ - [Normaliser-Free ResNets](#normaliser-free-resnets)
+    * [Prior Work](#prior-work)
+    * [Current Work](#current-work)
+    * [NF-ResNets vs BN](#nf-resnets-vs-bn)
+ - [Discussion](#discussion)
+    * [Limitations](#limitations)
+    * [Normalisation Insights](#normalisation-insights)
+    * [Conclusion](#conclusion)
+ - [References](#references)
+
 
 ## Normalisation
 
@@ -32,7 +51,7 @@ Despite the variety of normalisation methods, they all build on the same princip
 The design of modern normalisation layers in neural networks is mainly inspired by data normalisation ([Lecun et al., 1998](#lecun98efficient); [Schraudolph, 1998](#schraudolph98centering); [Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 In the setting of a simple linear regression, it can be shown (see e.g., [Lecun et al., 1998](#lecun98efficient)) that the second-order derivative, i.e., the Hessian, of the objective is exactly the covariance of the input data, $\mathcal{D}$:
 
-$$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
+$$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w}^\mathsf{T} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
 
 If the Hessian of an optimisation problem is (close to) the identity, it becomes much easier to find a solution ([Lecun et al., 1998](#lecun98efficient)).
 Therefore, learning should become easier if the input data is whitened &mdash; i.e., is transformed to have an identity covariance matrix.
