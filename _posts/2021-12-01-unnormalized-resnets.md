@@ -20,7 +20,7 @@ The fact that Brock et al. went out of their way to get rid of something as simp
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
-## Table of Contents
+## Contents
 
  - [Normalisation](#normalisation)
     * [Origins](#origins)
@@ -30,12 +30,12 @@ The goal of this blog post is to provide some insights w.r.t. these questions us
     * [History](#history)
     * [Moment Control](#moment-control)
  - [Normaliser-Free ResNets](#normaliser-free-resnets)
-    * [Prior Work](#prior-work)
-    * [Current Work](#current-work)
-    * [NF-ResNets vs BN](#nf-resnets-vs-bn)
+    * [Old Ideas](#old-ideas)
+    * [Imitating Signal Propagation](#imitating-signal-propagation)
+    * [Performance](#performance)
  - [Discussion](#discussion)
     * [Limitations](#limitations)
-    * [Normalisation Insights](#normalisation-insights)
+    * [Insights](#insights)
     * [Conclusion](#conclusion)
  - [References](#references)
 
@@ -327,7 +327,7 @@ CWN simply applies WN after subtracting the weight mean from each weight vector,
 [Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalised weights to account for the effect of activation function (cf. [Arpit et al., 2016](#arpit16normprop)).
 The effect of including the rescaled CWN in NF-ResNets is illustrated in the right part of Figure&nbsp;[5](#fig_nfresnet).
 
-### NF-ResNets vs BN
+### Performance
 
 Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets with standard regularisation methods perform on par with traditional ResNets that are using BN.
 An important [detail](https://github.com/deepmind/deepmind-research/blob/ba761289c157fc151c7f06aa37b812d8100561db/nfnets/resnet.py#L158-L159) that is not apparent from the text, however, is that their baseline ResNets use the (standard) "_BN -> ReLU_" order and not the "_ReLU -> BN_" order, which served as the model for the signal propagation of NF-ResNets.
@@ -356,7 +356,7 @@ In this sense, it is arguable whether NF-ResNets are truly normaliser-free.
 Finally, some of the problems with BN are not resolved or reintroduced when building competitive NF-ResNets.
 There are still differences between training and testing when using dropout regularisation, but CWN also introduces a certain computational overhead during training.
 
-### Normalisation Insights
+### Insights
 
 In the end, an NF-ResNet can be interpreted as consisting of different components that model parts of what BN normally does.
 For example, the $\alpha$ scaling factor used in NF-ResNets obviously models the division by the standard deviation of BN.
