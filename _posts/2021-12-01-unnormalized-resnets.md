@@ -203,7 +203,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information sh
 </figure>
 
 The general formulation of skip connections that we provided earlier, captures the idea of skip connections very well.
-As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in figure&nbsp;[3](#fig_skip)).
+As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in Figure&nbsp;[3](#fig_skip)).
 Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet)).
 In DenseNets ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections are concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
@@ -258,29 +258,30 @@ After all, without BN, the skip connections in ResNets would have suffered from 
 However, this does not take away that BN does have a few [practical issues](#alternatives) and there do seem to be alternative techniques to control these drifting effects.
 Therefore, it makes sense to research the question whether BN is just a useful or actually a necessary component of the ResNet architecture.
 
-### Prior Work
+### Old Ideas
 
-The idea of training ResNets without BN is practically as old as ResNets themselves.
+Whereas some alternative normalisation methods aimed to simply provide normalisation in scenarios where BN does not work so well, other methods were explicitly designed to reduce or get rid of the normalisation computations (e.g., [Arpit et al., 2016](#arpit16normprop); [Salimans & Kingma, 2016](#salimans16weightnorm); [Klambauer et al., 2017](#klambauer17selfnorm)).
+Even the idea of training ResNets without BN is practically as old as ResNets themselves.
 With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialisation for small datasets (CIFAR-10).
-Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering the initialisation of the weights.
+Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering weight initialisation in ResNets.
 
-Getting rid of BN in ResNets has been posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
-The main idea of FixUp is to scale the weights in the $k$-th layer in each residual branch by $L^{-1/(2k-2)}$.
-Moreover, they set the initial weights for the last layer in each residual branch to zero and introduce learnable $\beta$ scaling factors as well as scalar biases before every layer in the network.
-With these tricks, Zhang et al. are able to show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalisation.
+Getting rid of BN in ResNets was posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
+On top of introducing the learnable $\beta$ parameters and the $L^{-1/(2k - 2)}$ scaling in residual branches,
+they set the initial weights for the last layer in each residual branch to zero and introduce scalar biases before every layer in the network.
+With these tricks, Zhang et al. show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalisation.
 Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
-The key difference with FixUp is that the initial value for the learnable $\beta$ parameter must be less than $1 / \sqrt{L}.$
-In return, SkipInit does not require the rescaling of initial weights in the residual branch or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
+The key difference with FixUp is that the initial value for the learnable $\beta$ parameter is set to be less than $1 / \sqrt{L}.$
+As a result, SkipInit does not require the rescaling of initial weights in residual branches or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
 
-### Current Work
+### Imitating Signal Propagation
 
-Although the results of prior works look promising, there is still a performance gap compared to ResNets with BN.
+Although the results of prior work look promising, there is still a performance gap compared to ResNets with BN.
 To close this gap, [Brock et al. (2021a)](#brock21characterizing) suggest studying the propagation of mean and variance through ResNets by means of so-called Signal Propagation Plots (SPPs).
 These SPPs simply visualise the squared mean and variance of the activations after each skip connection, as well as the variance at the end of every residual branch (before the skip connection).
 Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
-First of all, the SPPs on the left side clearly illustrate that BN transforms the exponential growth to a linear propagation in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
-When focusing on ResNets with BN (on the right side), it is clear that mean and variance are reduced after every layer, each of which consists of a few skip connections.
-This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted after every layer in these ResNets.
+The SPPs on the left clearly illustrate that BN transforms the exponential growth to a linear increase in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
+When focusing on ResNets with BN (on the right of Figure&nbsp;[4](#fig_spp)), it is clear that mean and variance are reduced after every sub-net, each of which consists of a few skip connections.
+This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted between every two sub-nets in these ResNets.
 
 <figure id="fig_spp">
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalisation on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
@@ -289,19 +290,21 @@ This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted
         SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$, $y$-axis on the right).
         The left plot illustrates the difference between ResNets with and without BN layers.
         The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling.
-        Note that ResNet-50 has four layers with 3, 4, 6 and 3 residual branches, respectively.
+        Note that ResNet-50 has four sub-nets with 3, 4, 6 and 3 skip connections, respectively.
     </figcaption>
 </figure>
 
 The goal of Normaliser-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets while preserving the characteristics visualised in the SPPs ([Brock et al., 2021a](#brock21characterizing)).
-To get rid of the exponential increase in variance in unnormalised ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
-This effectively implements the scaling that is normally a part of BN.
+To get rid of the exponential variance increase in unnormalised ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
+Here, $\operatorname{Var}[\boldsymbol{x}]$ is the variance over all samples in the dataset, such that the $\alpha$ scaling effectively mirrors the division by $\boldsymbol{\sigma}_\mathcal{B}$ in BN (assuming a large enough batch size).
 Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
 This is possible if the inputs to the network are properly normalised (i.e., have unit variance) and the residual branch, $f$, is properly initialised (i.e., preserves variance).
-Although this scheme should allow reducing the variance after every skip connection, it is only used after every layer, which typically consists of multiple skip connections.
-For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and not on the skip connection, such that $\boldsymbol{y} = x + \beta f(\alpha x).$
-This is necessary to imitate the variance drops in the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see figure&nbsp;[4](#fig_spp)).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
+
+Although this scheme should allow reducing the variance after every skip connection, it is only used after every sub-net, which typically consists of multiple skip connections.
+For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and **not on the skip connection**, such that $\boldsymbol{y} = x + \beta f(\alpha x).$
+This effectively models the variance drops from the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see Figure&nbsp;[4](#fig_spp)).
+Rather than aiming for constant variance throughout the network, the goal of NF-ResNets is really to mimic the signal propagation of a ResNet with BN.
 
 <figure id="fig_nfresnet">
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalisation (gray lines) and one for a Normaliser-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
@@ -309,32 +312,33 @@ The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to
         Figure&nbsp;5: SPPs comparing an NF-ResNet-50 to a Resnet with BN at initialisation.
         The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters.
         The right plot displays the behaviour of an NF-ResNet with Centred Weight Normalisation.
-        Note that for the right plot, the scale for the SPPs is practically defined by the residual variance.
+        Note that the variance of the residuals in the right plot should give some insights as to why the curves do not overlap.
     </figcaption>
 </figure>
 
-As can be seen on the left plot in figure&nbsp;[5](#fig_nfresnet), a plain NF-ResNet effectively mimics the variance propagation of the baseline ResNet pretty accurately.
+As can be seen on the left plot in Figure&nbsp;[5](#fig_nfresnet), a plain NF-ResNet effectively imitates the variance propagation of the baseline ResNet pretty accurately.
 The propagation of the squared mean in NF-ResNets, on the other hand, looks nothing like that from the BN model.
-After all, the considerations that lead to the scaling parameters only considers the variance propagation.
+After all, the considerations that lead to the scaling parameters only cover the variance propagation.
 On top of that, it turns out that the variance of the residual branches (right before it is merged with the skip connection) is not particularly steady.
-This indicates that the residual branches might not properly preserve variance, which is necessary for the analytic computations of $\alpha$ to be correct.
+This indicates that the residual branches do not properly preserve variance, which is necessary for the analytic computations of $\alpha$ to be correct.
+
 It turns out that both of these discrepancies can be resolved by introducing a variant of Centred Weight Normalisation (CWN; [L. Huang et al., 2017](#huang17centred)) to NF-ResNets.
-CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and variance can propagate steadily.
-The effect of including CWN in NF-ResNets is illustrated in the right part of figure&nbsp;[5](#fig_nfresnet).
+CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and that the variance of the weights is constant.
+[Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalised weights to account for the effect of activation function (cf. [Arpit et al., 2016](#arpit16normprop)).
+The effect of including the rescaled CWN in NF-ResNets is illustrated in the right part of Figure&nbsp;[5](#fig_nfresnet).
 
 ### NF-ResNets vs BN
 
-Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets **with** standard regularisation methods perform on par with traditional ResNets that are using BN.
-An important [detail](https://github.com/deepmind/deepmind-research/blob/ba761289c157fc151c7f06aa37b812d8100561db/nfnets/resnet.py#L158-L159) that is not apparent from the text, however, is that the traditional ResNets use the "_BN -> ReLU_" order instead of the "_ReLU -> BN_" order, which served as the model for the variance propagation for NF-ResNets.
-This is why the SPPs in figure&nbsp;[5](#fig_nfresnet), which depict the "_ReLU -> BN_" order, do not perfectly overlap, unlike the figures in ([Brock et al., 2021a](#borck21characterizing)).
-Also, additional regularisation is necessary to account for the _implicit_ regularisation effects that are attributed to BN.
+Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets with standard regularisation methods perform on par with traditional ResNets that are using BN.
+An important [detail](https://github.com/deepmind/deepmind-research/blob/ba761289c157fc151c7f06aa37b812d8100561db/nfnets/resnet.py#L158-L159) that is not apparent from the text, however, is that their baseline ResNets use the (standard) "_BN -> ReLU_" order and not the "_ReLU -> BN_" order, which served as the model for the signal propagation of NF-ResNets.
+This is also why the SPPs in Figure&nbsp;[5](#fig_nfresnet), which depict the "_ReLU -> BN_" order, do not perfectly overlap, unlike the figures in ([Brock et al., 2021a](#borck21characterizing)).
 
 Because BN does induce computational overhead, it seems natural to expect NF-ResNets to allow for more computationally efficient models.
 Therefore, [Brock et al. (2021a)](#brock21characterizing) also compare NF-ResNets with a set of architectures that are optimised for efficiency.
 However, it turns out that some of these architectures do not play well with the weight normalisation that is typically used in NF-ResNets.
-As a result, NF-ResNets are unable to outperform EfficientNets ([Tan & Le, 2019](#tan19efficientnet)).
-However, they do illustrate that the performance gap between EfficientNets and (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)) can be reduced by introducing the NF-ResNet scheme.
-In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
+As a result, normaliser-free versions of EfficientNets ([Tan & Le, 2019](#tan19efficientnet)) lag behind their BN counterparts.
+When applied to (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)), however, the performance gap between with EfficientNets can be reduced by introducing the NF-ResNet scheme.
+In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are actually able to outperform similar networks with BN.
 
 ## Discussion
 
