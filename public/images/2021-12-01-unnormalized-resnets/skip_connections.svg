@@ -18,7 +18,7 @@
             stroke: black;
         }
         rect.nonlinear {
-            fill: #0071bc;
+            fill: #0084bb;
             stroke: black;
         }
         rect.mask {
