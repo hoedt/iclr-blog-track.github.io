@@ -10,7 +10,7 @@ After all, normalisation generally speeds up learning and leads to models that g
 This turns out to be especially useful when using some form of skip connections, which are prominent in residual networks (ResNets), for example.
 However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalisation**!
 
-The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets for which BN happens to be especially helpful, does raise a few questions:
+The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets, for which BN happens to be especially helpful, does raise a few questions:
 
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
@@ -34,16 +34,19 @@ In the setting of a simple linear regression, it can be shown (see e.g., [Lecun 
 
 $$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
 
-By enforcing that the Hessian (= covariance of the data) is (close to) the identity matrix, the optimisation problem becomes a lot easier ([Lecun et al., 1998](#lecun98efficient)).
-However, whitening the data can be costly and might even hurt generalisation ([Wadia et al., 2021](#wadia21whitening)).
-Therefore, typical data normalisation consists of centring (to get zero mean) and scaling (to get unit variance) the data to at least improve the condition of the optimisation problem.
+If the Hessian of an optimisation problem is (close to) the identity, it becomes much easier to find a solution ([Lecun et al., 1998](#lecun98efficient)).
+Therefore, learning should become easier if the input data is whitened &mdash; i.e., is transformed to have an identity covariance matrix.
+However, full whitening of the data is often costly and might even degenerate generalisation performance ([Wadia et al., 2021](#wadia21whitening)).
+Instead, the data is _normalised_ to have zero mean and unit variance to get at least some of the benefits of an identity Hessian.
 
-When considering multi-layer networks, things get more complicated.
-However, in the end, it turns out that normalising the inputs to a layer should provide the same kind of benefits for the optimisation of the weights in that layer ([Lecun et al., 1998](#lecun98efficient)).
-Using these insights [Schraudolph (1998)](#schraudolph98centering) showed empirically that centring the activations can effectively be used to speed up learning.
+When considering multi-layer networks, the expectation would be that things get more complicated.
+However, it turns out that the benefits of normalising the input data for linear regression directly carry over to the individual layers of a multi-layer network ([Lecun et al., 1998](#lecun98efficient)).
+Therefore, simply normalising the inputs to a layer should also help to speed up the optimisation of the weights in that layer.
+Using these insights, [Schraudolph (1998)](#schraudolph98centering) showed empirically that centring the activations effectively speeds up learning.
 
 Also initialisation strategies commonly build on these principles (e.g., [Lecun et al., 1998](#lecun98efficient); [Glorot & Bengio, 2010](#glorot10understanding); [He et al., 2015](#he15delving)).
-Since the initial parameters are independent of the inputs, the weights can be set so that (pre-)activations are effectively normalised before the first update.
+Since the initial parameters of a layer are independent of the inputs, they can easily be tuned.
+When tuned correctly, it can be assured that the (pre)-activations of each layer are normalised throughout the network before the first update.
 However, as soon as the network is being updated, the distributions change and the normalising properties of the initialisation get lost ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 
 ### Batch Normalisation
@@ -60,24 +63,24 @@ In case a zero mean and unit variance is not desired, it is also possible to app
 The above description explains the core operation of BN during training.
 However, during inference, it is not uncommon to desire predictions for single samples.
 Obviously, this would cause trouble because a mini-batch with a single sample has zero variance.
-Therefore, it is common to accumulate the statistics ($\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$) that are used for normalisation, during training.
+Therefore, it is common to accumulate the statistics that are used for normalisation ( $\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$ ), over multiple mini-batches during training.
 These accumulated statistics can then be used as estimators for the mean and variance during inference.
 This makes it possible for BN to be used on single samples during inference.
 
 The original reason for introducing BN was to alleviate the so-called _internal covariate shift_, i.e. the change of distributions as the network updates.
 More recent research has pointed out, however, that internal covariate shift does not necessarily deteriorate learning dynamics ([Santurkar et al., 2018](#santurkar18how)).
-Apparently, [Ioffe & Szegedy (2015)](#ioffe15batchnorm) also realised that simply normalising the signal does not suffice: 
+Apparently, [Ioffe & Szegedy (2015)](#ioffe15batchnorm) also realised that simply normalising the signal does not suffice to achieve good performance: 
 
  > [...] the model blows up when the normalization parameters are computed outside the gradient descent step.
 
  All of this seems to indicate that part of the success of BN is due to the effects it has on the gradient signal.
- The affine transformation simply scales the gradient, such that $\nabla_{\hat{\boldsymbol{x}}} L = \boldsymbol{\gamma} \odot \nabla_{\boldsymbol{y}} L.$
- The normalisation operation, on the other hand, transforms the gradient, $\boldsymbol{g} = \nabla_{\hat{\boldsymbol{x}}} L$, as follows:
+ The affine transformation in BN simply scales the gradient, such that $\nabla_{\hat{\boldsymbol{x}}} \mathcal{L} = \boldsymbol{\gamma} \odot \nabla_{\boldsymbol{y}} \mathcal{L}.$
+ The normalisation operation, on the other hand, transforms the gradient, $\boldsymbol{g} = \nabla_{\hat{\boldsymbol{x}}} \mathcal{L}$, as follows:
 
- $$\nabla_{\boldsymbol{x}} L = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
+ $$\nabla_{\boldsymbol{x}} \mathcal{L} = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
 
-where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} L$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
-Note that this directly corresponds to centring the gradients, which should also improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
+where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} \mathcal{L}$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
+Note that this directly corresponds to centring the gradients, which is also supposed to improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
 
 In the end, everyone seems to agree that one of the main benefits of BN is that it enables higher learning rates ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
 An additional benefit is that BN is scale-invariant and therefore much less sensitive to weight initialisation ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
@@ -101,13 +104,13 @@ Although BN provides important benefits, it also comes with a few downsides:
  - BN uses **different statistics for inference** than those used during training ([Ba et al., 2016](#ba16layernorm); [Ioffe, 2017](#ioffe17batchrenorm)).
    This is especially problematic if the distribution during inference is different or drifts away from the training distribution.
  - BN does not play well with **other regularisation** methods ([Hoffer et al., 2018](#hoffer18norm)).
-   This is especially known for $L_2$ regularisation ([Hoffer et al., 2018](#hoffer18norm)) and dropout ([Li et al., 2019](#li19understanding)).
+   This is especially known for $\mathrm{L}_2$-regularisation ([Hoffer et al., 2018](#hoffer18norm)) and dropout ([Li et al., 2019](#li19understanding)).
  - BN introduces a significant **computational overhead** during training ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Gitman and Ginsburg, 2017](#gitman17comparison)).
    Because of the running averages, also memory requirements increase when introducing BN.
 
 Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
-One family of alternatives simply computes the statistics along different dimensions (see figure&nbsp;[2](#fig_norm)).
+One family of alternatives simply computes the statistics along different dimensions (see Figure&nbsp;[2](#fig_norm)).
 **Layer Normalisation (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
 Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
 This makes LN invariant to weight shifts and scaling individual samples.
@@ -122,7 +125,7 @@ This gives rise to a technique known as **Instance Normalisation (IN)**, which p
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/normalisation_dimensions.svg" alt="visualisation of normalisation methods">
     <figcaption>
         Figure&nbsp;2: Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
-        $|\mathcal{B}|$ is the batch size, $C$ represents the number of channels/features and $S$ is the size of the signal (e.g. width times height for images).
+        Different dimensions are visualised (and explained) in Figure&nbsp;<a href="#fig_dims">1</a>.
         The lightly shaded region for LN indicates how it is typically used for image data.
         Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
     </figcaption>
@@ -137,12 +140,12 @@ In some sense, NP can be interpreted as a variant of BN where the statistics are
 **Spectral Normalisation (SN)**, on the other hand, makes use of an induced matrix norm to normalise the entire weight matrix ([Miyato et al., 2018](#miyato18spectralnorm)).
 Concretely, the weights are scaled by the reciprocal of an approximation of the largest singular value of the weight matrix.
 
-Whereas WN, NP and SN still involve the computation of some weight norm, it is also possible to obtain normalisation without the computational overhead.
+Whereas WN, NP and SN still involve the computation of some weight norm, it is also possible to obtain normalisation without any computational overhead.
 By creating a forward pass that induces attracting fixed points in mean and variance, **Self-Normalising Networks (SNNs)** ([Klambauer et al., 2017](#klambauer17selfnorm)) are able to effectively normalise the signal.
 To achieve these fixed points, it suffices to carefully scale the ELU activation function ([Clevert et al., 2016](#clevert16elu)) and the initial variance of the weights.
 Additionally, [Klambauer et al. (2017)](#klambauer17selfnorm) provide a way to tweak dropout so that it does not interfere with the normalisation.
 Maybe it is useful to point out that SNNs do not consist of explicit normalisation operations.
-In this sense, an SNN could already be seen as some form of _normaliser-free_ network.
+In this sense, an SNN could already be seen as an example of _normaliser-free_ networks.
 
 
 ## Skip Connections
