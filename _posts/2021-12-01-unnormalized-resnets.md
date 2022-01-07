@@ -7,7 +7,7 @@ authors: Anonymous;
 
 Since the advent of Batch Normalisation (BN) almost every state-of-the-art (SOTA) method uses some form of normalisation.
 After all, normalisation generally speeds up learning and leads to models that generalise better than their unnormalised counterparts.
-This turns out to be especially useful when using some form of skip connections, which are prominent in residual networks (ResNets), for example.
+This turns out to be especially useful when using some form of skip connections, which are prominent in Residual Networks (ResNets), for example.
 However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalisation**!
 
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets, for which BN happens to be especially helpful, does raise a few questions:
@@ -169,14 +169,16 @@ In this sense, an SNN could already be seen as an example of _normaliser-free_ n
 
 ## Skip Connections
 
-[Brock et al. (2021a)](#brock21characterizing) mainly aim to rid residual networks (ResNets) of normalisation.
-Therefore, it probably makes sense to revisit the key component of these ResNets: _skip connections_.
-Apart from a bit of historical context, we aim to provide some intuition as to why normalisation methods can be so helpful in the context of skip connections, and what alternatives are available.
+With normalisation out of the way, we probably want to tackle the _skip connections_.
+After all, [Brock et al. (2021a)](#brock21characterizing) mainly aim to rid Residual Networks (ResNets) of normalisation.
+Although skip connections already existed long before ResNets were invented, they are often considered as one of the main contributions by the work of [He et al., 2016](#he16resnet).
+In some sense, it almost seems as if skip connections could only become popular after BN was invented.
+Especially if we consider the effects of skip connections on the statistics of signals flowing through the network.
 
 ### History
 
-_Shortcut_ or _skip connections_ are a way to allow information to bypass one or more layers in a neural network.
-Mathematically, skip connections are typically written down something like
+_Shortcut_ or _skip connections_ make it possible for information to bypass one or more layers in a neural network.
+Mathematically, they are typically expressed using a formalism of the form
 
 $$\boldsymbol{y} = \boldsymbol{x} + f(\boldsymbol{x}),$$
 
@@ -184,12 +186,12 @@ where $f$ represents some non-linear transformation ([He et al., 2016a](#he16res
 This non-linear transformation is typically a sub-network that is commonly referred to as the _residual branch_ or _residual connection_.
 When the outputs of the residual branch have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connection with that of the residual connection.
 
-Skip connection became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
-However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was a thing ([Ripley, 1996](#ripley96pattern)).
+Skip connections became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
+However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was even a thing ([Ripley, 1996](#ripley96pattern)).
 Similar to normalisation methods, skip connections can improve the condition of the optimisation problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
-Also in the forward pass, skip connections have benefits:
-e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information can flow through the network without being altered.
-[He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the linear term of the transformation can be ignored.
+However, skip connections also have benefits in the forward pass:
+e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information should be able to flow through the network without being altered.
+[He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the network can focus on the non-linear part of the transformation (and ignore the linear component).
 
 <figure id="fig_skip">
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/skip_connections.svg" alt="visualisation of different types of skip connections">
@@ -202,59 +204,59 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information ca
 
 The general formulation of skip connections that we provided earlier, captures the idea of skip connections very well.
 As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in figure&nbsp;[3](#fig_skip)).
-Strictly speaking, even [He et al., (2016a)](#he16resnet) do not strictly adhere to their own formulation because they use an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016](#he16preresnet)).
-E.g., in DenseNet ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections are concatenated instead of aggregated by means of a sum.
+Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet)).
+In DenseNets ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections are concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
 Other variants of skip connections make use of masks to select which information is passed on.
 Highway networks ([Srivasta et al., 2015](#srivasta15highway)) make use of a gating mechanism similar to that in Long Short-Term Memory (LSTM) ([Hochreiter et al., 1997](#hochreiter97lstm)).
 These gates enable the network to learn how information from the skip connection is to be combined with that of the residual branch.
-Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as highway networks without a residual connection.
-Additionally, the gate of the skip connection is replaced by a more complex attention mask.
-
+Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as a variation on highway networks without residual branches.
+This comparison does only hold, however, if you are willing to interpret the attention mask as some form of complex gate for the skip connection.
 
 ### Moment Control
 
 Traditional initialisation techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, but they do not work so well in ResNets.
-The key problem is that the variance must increase when the two branches are added together.
-After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance will be greater than the input variance.
-Moreover, if the signal would have a strictly positive mean, also the mean would start drifting as the network becomes deeper.
-By inserting normalisation layers after every residual block, these drifting effects can effectively be countered.
+The key problem is that the variance can not remain constant when skip connections are involved.
+After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance must be greater than the input variance.
+Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when skip connections are chained together.
+Luckily, these drifting effects can be mitigated to some extent.
 
-Instead of relying on normalisation methods to resolve the drifting effects, it is also possible to implement other measures against these drift effects.
 Similar to standard initialisation methods, the key idea is to stabilise the variance propagation.
-To this end, a slightly modified formulation of residual networks is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
+To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
 
 $$\boldsymbol{y} = \alpha x + \beta f(\alpha x),$$
 
-which is equivalent to the traditional formulation when $\alpha = \beta = 1.$
-The key advantage of this formulation is that the variance can be controlled (to some extent) by the newly introduced scaling factors $\alpha$ and $\beta.$
+which is equivalent to the original formulation when $\alpha = \beta = 1.$
+The key advantage of this formulation is that the variance can be controlled (to some extent) by tuning the newly introduced scaling factors $\alpha$ and $\beta.$
 
 A very simple counter-measure to the variance explosion in ResNets is to set $\alpha = 1 / \sqrt{2}$ ([Balduzzi et al., 2017](#balduzzi17shattered)).
 Assuming that the residual branch approximately preserves the variance, the variances of $\boldsymbol{y}$ and $\boldsymbol{x}$ should be roughly the same.
 In practice, however, it seems to be more common to tune the $\beta$ factor instead of $\alpha$ ([Balduzzi et al., 2017](#balduzzi17shattered)).
 For instance, simply setting $\beta$ to some small value (e.g., in the range $[0.1, 0.3]$) can already help ResNets (with BN) to stabilise training ([Szegedy et al., 2016](#szegedy16inceptionv4)).
 It turns out that having small values for $\beta$ can help to preserve correlations between gradients, which should benefit learning ([Balduzzi et al., 2017](#balduzzi17shattered)).
+
 Similar findings were established through the analysis of the variance propagation in ResNets by [Hanin & Rolnick (2018)](#hanin18how).
-Eventually, they propose to set $\beta = b^l$ in the $l$-th layer, with $0 < b < 1$ to make sure that the sum of scaling factors converges.
-[Arpit et al. (2019)](#arpit19how) also take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
-Also learning the scaling factor $\beta$ in each layer can make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
+Eventually, they propose to set $\beta = b^l$ after the $l$-th skip connection, with $0 < b < 1$ to make sure that the sum of scaling factors from all layers converges.
+[Arpit et al. (2019)](#arpit19how) additionally take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
+Learning the scaling factor $\beta$ in each layer can also make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
 Obviously, there are also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
-One possible workaround is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
+One alternative solution is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
 Instead of using the reciprocal of the empirical variance as a scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
-[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha x + \beta f(x),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection and $c$ is some constant, which was chosen to be the number of residual branches, $L$.
-Similar to setting $\alpha = 1 / \sqrt{2},$ this effectively counters the variance explosion.
-On top of that, these factors should assure that the outputs of residual branches are weighted similarly, independent of their depth.
+[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha x + \beta f(x),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection. 
+Here, $c$ is an arbitrary constant, which was eventually set to be the number of residual branches, $L$.
+For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha = 1 / \sqrt{2},$ as suggested by [Balduzzi et al. (2017)](#balduzzi17shattered).
+However, the more general approach should assure that the outputs of residual branches are weighted similarly in the end result, independent of their depth.
 
 
 ## Normaliser-Free ResNets
 
-In some sense, it could be argued that the current popularity of skip connections is due to BN, rather than ResNets.
-After all, without BN the skip connections in ResNets would have suffered from the drifting effects discussed earlier and ResNets would probably not have become so popular.
-However, BN does have a few practical issues (see [earlier](#alternatives)) and it does seem to be the case that the drifting effects can be controlled using other techniques.
-Therefore, it seems natural to find out whether it is possible to replace BN with one of these other techniques to get the best of both worlds.
+It could be argued that the current popularity of skip connections is due to BN.
+After all, without BN, the skip connections in ResNets would have suffered from the drifting effects discussed [earlier](#moment-control).
+However, this does not take away that BN does have a few [practical issues](#alternatives) and there do seem to be alternative techniques to control these drifting effects.
+Therefore, it makes sense to research the question whether BN is just a useful or actually a necessary component of the ResNet architecture.
 
 ### Prior Work
 
