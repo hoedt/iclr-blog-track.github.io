@@ -46,7 +46,7 @@
 			}
 			.marked {
 				stroke: none;
-				fill: #0071bc;
+				fill: #0084bb;
 			}
 			.grid {
 				stroke: black;
