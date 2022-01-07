@@ -240,7 +240,7 @@ Eventually, they propose to set $\beta = b^l$ after the $l$-th skip connection, 
 [Arpit et al. (2019)](#arpit19how) additionally take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
 Learning the scaling factor $\beta$ in each layer can also make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
-Obviously, there are also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
+There are of course also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
 One alternative solution is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
@@ -248,7 +248,7 @@ Instead of using the reciprocal of the empirical variance as a scaling factor, [
 [Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha x + \beta f(x),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection. 
 Here, $c$ is an arbitrary constant, which was eventually set to be the number of residual branches, $L$.
 For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha = 1 / \sqrt{2},$ as suggested by [Balduzzi et al. (2017)](#balduzzi17shattered).
-However, the more general approach should assure that the outputs of residual branches are weighted similarly in the end result, independent of their depth.
+However, the more general approach should assure that the outputs of residual branches are weighted similarly at the output of the network, independent of their depth.
 
 
 ## Normaliser-Free ResNets
@@ -256,7 +256,7 @@ However, the more general approach should assure that the outputs of residual br
 It could be argued that the current popularity of skip connections is due to BN.
 After all, without BN, the skip connections in ResNets would have suffered from the drifting effects discussed [earlier](#moment-control).
 However, this does not take away that BN does have a few [practical issues](#alternatives) and there do seem to be alternative techniques to control these drifting effects.
-Therefore, it makes sense to research the question whether BN is just a useful or actually a necessary component of the ResNet architecture.
+Therefore, it makes sense to research the question of whether BN is just a useful or a necessary component of the ResNet architecture.
 
 ### Old Ideas
 
@@ -338,52 +338,53 @@ Therefore, [Brock et al. (2021a)](#brock21characterizing) also compare NF-ResNet
 However, it turns out that some of these architectures do not play well with the weight normalisation that is typically used in NF-ResNets.
 As a result, normaliser-free versions of EfficientNets ([Tan & Le, 2019](#tan19efficientnet)) lag behind their BN counterparts.
 When applied to (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)), however, the performance gap between with EfficientNets can be reduced by introducing the NF-ResNet scheme.
-In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are actually able to outperform similar networks with BN.
+In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
 
 ## Discussion
 
-NF-ResNets show that it is actually possible to build networks without BN that are able to achieve competitive prediction performance.
-However, it does not look like this scheme would be capable of making BN entirely obsolete.
-Therefore, it probably makes sense to take a closer look at what the limitations of NF-ResNets are and what they can learn us about the mechanisms that make BN so successful.
+NF-ResNets show that it is possible to build networks without BN that are able to achieve competitive prediction performance.
+It is not yet entirely clear whether the ideas of NF-ResNets could make BN entirely obsolete, however.
+Therefore, it is probably to take a closer look at what the limitations of NF-ResNets are.
+Assuming that the ideas in NF-ResNets can make BN (at least partly) obsolete, this should also provide some insights as to what the important factors are to explain the success of BN.
 
 ### Limitations
 
 First of all, the exact procedure for scaling residual branches is only meaningful for architectures that include (some sort of) skip connections.
-Therefore, it does not make sense to apply the core idea behind NF-ResNets to get rid of BN layers in arbitrary architectures.
+In general, it is not possible to apply the ideas behind NF-ResNets to get rid of BN layers in arbitrary architectures.
 Furthermore, NF-ResNets still rely on normalisation methods to attain good performance &mdash; in contrast to what their name might suggest.
-[Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalisation_, but they do rely on Weight Normalisation techniques to replace BN everywhere.
+[Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalisation_, but they do rely on an adaptation of Weight Normalisation to replace BN.
 In this sense, it is arguable whether NF-ResNets are truly normaliser-free.
 Finally, some of the problems with BN are not resolved or reintroduced when building competitive NF-ResNets.
-There are still differences between training and testing when using dropout regularisation, but CWN also introduces a certain computational overhead during training.
+E.g., there are still differences between training and testing when using plain dropout regularisation, CWN still introduces a certain computational overhead during training, etc.
 
 ### Insights
 
 In the end, an NF-ResNet can be interpreted as consisting of different components that model parts of what BN normally does.
 For example, the $\alpha$ scaling factor used in NF-ResNets obviously models the division by the standard deviation of BN.
 It is also easy to see that the implicit regularisation that is attributed to BN can be replaced by explicit regularisation schemes.
-Furthermore, the subtraction by the mean in BN is practically implemented by means of the weight centring in CWN.
-Also, the scale-invariance of the weights of BN is re-introduced by means of CWN.
+Furthermore, the mean subtraction in BN is practically implemented by means of the weight centring in CWN.
+Also, the scale-invariance of the weights of BN is re-introduced through CWN.
 The input scale-invariance that BN introduces in each layer, on the other hand, is lost when using CWN.
 When considering the entire residual branch (or network), however, $\alpha$ does enable some sort of scale-invariance for the entirety of this branch (or network).
 Finally, the affine transformation after the normalisation in BN is modelled by scaling the result of CWN.
 Note that the affine shift does not need to be modelled explicitly, since CWN does not annihilate the regular bias parameters of the layers it acts upon, in contrast to BN.
 
-Although the effects of BN on the forward pass seem to be modelled well by NF-ResNets, the effects on the backward pass seem to be largely ignored by [Brock et al. (2021a)](#brock21characterizing).
+Although the effects of BN on the forward pass seem to be modelled quite well by NF-ResNets, the effects on the backward pass seem to be largely ignored by [Brock et al. (2021a)](#brock21characterizing).
 Follow-up work by [Brock et al. (2021b)](#brock21highperformance) suggests that these effects might not be unimportant.
-After all, the gradient flow in NF-ResNets is only affected by the scaling factors, since CWN does not affect the gradients w.r.t. the inputs.
-Therefore, regular NF-ResNets have no way to apply the gradient centring ([Schraudolph, 1998](#schraudolph98centering)) that is inherent to BN layers.
-However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to the gradient dynamics imposed by BN.
+After all, the gradient flow in NF-ResNets is only affected by the scaling factors, $\alpha$ and $\beta,$ since CWN does not affect the gradients w.r.t. the inputs.
+Therefore, regular NF-ResNets do not have a gradient centring ([Schraudolph, 1998](#schraudolph98centering)) component, as can be found in BN layers.
+However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to the gradient dynamics that are inherent to BN.
 
 ### Conclusion
 
-NF-ResNets show that it is possible to get rid of BN in ResNets without diminishing predictive performance.
+NF-ResNets show that it is possible to get rid of BN in ResNets without throwing away predictive performance.
 However, NF-ResNets still rely on weight normalisation schemes to make the models competitive with their BN counterparts.
 Therefore, it could be argued that NF-ResNets are not entirely _normaliser-free_.
-As a matter of fact, it almost seems as if NF-ResNets show that it is possible to imitate BN using different components, rather than how to really get rid of it.
-This also means that it is hard to distill meaningful insights as to why/how BN works so well.
+It almost seems as if NF-ResNets are an example of how BN can be imitated using different components, rather than how to get rid of it.
+This also means that it is hard to distil meaningful insights as to why/how BN works so well.
 One thing that this approach does make clear is that the backward dynamics due to BN should be part of the explanation.
 
-**TL;DR:** NF-ResNets, rescaled ResNets with Centred Weight Normalisation, can be used to immitate the forward pass of ResNets with BN, but they do not really help to explain what makes BN so successful.
+**TL;DR:** NF-ResNets, rescaled ResNets with Centred Weight Normalisation, can be used to imitate the forward pass of ResNets with BN, but they do not help much to explain what makes BN so successful.
 
 ---
 
