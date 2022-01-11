@@ -107,7 +107,7 @@ An additional benefit is that BN is scale-invariant and therefore much less sens
 ### Alternatives
 
 <figure id="fig_dims">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/data_dimensions.svg" alt="visualization of different input data types">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalised-resnets/data_dimensions.svg" alt="visualization of different input data types">
     <figcaption>
         Figure&nbsp;1: Different input types in terms of their typical 
         batch size ($|\mathcal{B}|$), the number of channels/features ($C$) and the <em>size</em> of the signal ($S$) (e.g. width times height for images).
