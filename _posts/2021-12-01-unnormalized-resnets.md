@@ -1,35 +1,35 @@
 ---
 layout: post
-title: Normalisation is dead, long live normalisation!
+title: Normalization is dead, long live normalization!
 tags: [normalization, initialization, propagation, skip connections, residual networks]
 authors: Anonymous; 
 ---
 
-Since the advent of Batch Normalisation (BN) almost every state-of-the-art (SOTA) method uses some form of normalisation.
-After all, normalisation generally speeds up learning and leads to models that generalise better than their unnormalised counterparts.
+Since the advent of Batch Normalization (BN) almost every state-of-the-art (SOTA) method uses some form of normalization.
+After all, normalization generally speeds up learning and leads to models that generalise better than their unnormalized counterparts.
 This turns out to be especially useful when using some form of skip connections, which are prominent in Residual Networks (ResNets), for example.
-However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalisation**!
+However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalization**!
 
 The fact that Brock et al. went out of their way to get rid of something as simple as BN in ResNets, for which BN happens to be especially helpful, does raise a few questions:
 
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
  3. Can this also work for other architectures[?](#limitations)
- 4. Does this allow to gain insights into why normalisation works so well[?](#normalisation-insights)
- 5. Wait a second... Are they getting rid of normalisation or just BN?
+ 4. Does this allow to gain insights into why normalization works so well[?](#normalization-insights)
+ 5. Wait a second... Are they getting rid of normalization or just BN?
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
 ## Contents
 
- - [Normalisation](#normalisation)
+ - [Normalization](#normalization)
     * [Origins](#origins)
-    * [Batch Normalisation](#batch-normalisation)
+    * [Batch Normalization](#batch-normalization)
     * [Alternatives](#alternatives)
  - [Skip Connections](#skip-connections)
     * [History](#history)
     * [Moment Control](#moment-control)
- - [Normaliser-Free ResNets](#normaliser-free-resnets)
+ - [Normalizer-Free ResNets](#normalizer-free-resnets)
     * [Old Ideas](#old-ideas)
     * [Imitating Signal Propagation](#imitating-signal-propagation)
     * [Performance](#performance)
@@ -40,74 +40,74 @@ The goal of this blog post is to provide some insights w.r.t. these questions us
  - [References](#references)
 
 
-## Normalisation
+## Normalization
 
-To set the scene for a world without normalisation, we start with an overview of normalisation layers in neural networks.
-Batch Normalisation is probably the most well-known method, but there are plenty of alternatives.
-Despite the variety of normalisation methods, they all build on the same principle ideas.
+To set the scene for a world without normalization, we start with an overview of normalization layers in neural networks.
+Batch Normalization is probably the most well-known method, but there are plenty of alternatives.
+Despite the variety of normalization methods, they all build on the same principle ideas.
 
 ### Origins
 
-The design of modern normalisation layers in neural networks is mainly inspired by data normalisation ([Lecun et al., 1998](#lecun98efficient); [Schraudolph, 1998](#schraudolph98centering); [Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+The design of modern normalization layers in neural networks is mainly inspired by data normalization ([Lecun et al., 1998](#lecun98efficient); [Schraudolph, 1998](#schraudolph98centering); [Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 In the setting of a simple linear regression, it can be shown (see e.g., [Lecun et al., 1998](#lecun98efficient)) that the second-order derivative, i.e., the Hessian, of the objective is exactly the covariance of the input data, $\mathcal{D}$:
 
 $$\frac{1}{|\mathcal{D}|} \sum_{(\boldsymbol{x}, y) \in \mathcal{D}} \nabla_{\boldsymbol{w}}^2 \frac{1}{2}(\boldsymbol{w}^\mathsf{T} \boldsymbol{x} - y)^2 = \frac{1}{|\mathcal{D}|}  \sum_{(\boldsymbol{x}, y) \in \mathcal{D}}\boldsymbol{x} \boldsymbol{x}^\mathsf{T}.$$
 
-If the Hessian of an optimisation problem is (close to) the identity, it becomes much easier to find a solution ([Lecun et al., 1998](#lecun98efficient)).
+If the Hessian of an optimization problem is (close to) the identity, it becomes much easier to find a solution ([Lecun et al., 1998](#lecun98efficient)).
 Therefore, learning should become easier if the input data is whitened &mdash; i.e., is transformed to have an identity covariance matrix.
-However, full whitening of the data is often costly and might even degenerate generalisation performance ([Wadia et al., 2021](#wadia21whitening)).
-Instead, the data is _normalised_ to have zero mean and unit variance to get at least some of the benefits of an identity Hessian.
+However, full whitening of the data is often costly and might even degenerate generalization performance ([Wadia et al., 2021](#wadia21whitening)).
+Instead, the data is _normalized_ to have zero mean and unit variance to get at least some of the benefits of an identity Hessian.
 
 When considering multi-layer networks, the expectation would be that things get more complicated.
 However, it turns out that the benefits of normalising the input data for linear regression directly carry over to the individual layers of a multi-layer network ([Lecun et al., 1998](#lecun98efficient)).
-Therefore, simply normalising the inputs to a layer should also help to speed up the optimisation of the weights in that layer.
+Therefore, simply normalising the inputs to a layer should also help to speed up the optimization of the weights in that layer.
 Using these insights, [Schraudolph (1998)](#schraudolph98centering) showed empirically that centring the activations effectively speeds up learning.
 
-Also initialisation strategies commonly build on these principles (e.g., [Lecun et al., 1998](#lecun98efficient); [Glorot & Bengio, 2010](#glorot10understanding); [He et al., 2015](#he15delving)).
+Also initialization strategies commonly build on these principles (e.g., [Lecun et al., 1998](#lecun98efficient); [Glorot & Bengio, 2010](#glorot10understanding); [He et al., 2015](#he15delving)).
 Since the initial parameters of a layer are independent of the inputs, they can easily be tuned.
-When tuned correctly, it can be assured that the (pre)-activations of each layer are normalised throughout the network before the first update.
-However, as soon as the network is being updated, the distributions change and the normalising properties of the initialisation get lost ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+When tuned correctly, it can be assured that the (pre)-activations of each layer are normalized throughout the network before the first update.
+However, as soon as the network is being updated, the distributions change and the normalising properties of the initialization get lost ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 
-### Batch Normalisation
+### Batch Normalization
 
-In contrast to classical initialisation methods, Batch Normalisation (BN) is able to maintain fixed mean and variance of the activations as the network is being updated ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
-Concretely, this is achieved by applying a typical data normalisation to every mini-batch of data, $\mathcal{B}$:
+In contrast to classical initialization methods, Batch Normalization (BN) is able to maintain fixed mean and variance of the activations as the network is being updated ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+Concretely, this is achieved by applying a typical data normalization to every mini-batch of data, $\mathcal{B}$:
 
 $$\hat{\boldsymbol{x}} = \frac{\boldsymbol{x} - \boldsymbol{\mu}_\mathcal{B}}{\boldsymbol{\sigma}_\mathcal{B}}.$$
 
 Here $\boldsymbol{\mu}\_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum\_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{x}$ is the mean over the inputs in the mini-batch and $\boldsymbol{\sigma}_\mathcal{B}$ is the corresponding standard deviation.
-Also, note that the division is element-wise and generally is numerically stabilised by some $\varepsilon$ when implemented.
+Also, note that the division is element-wise and generally is numerically stabilized by some $\varepsilon$ when implemented.
 In case a zero mean and unit variance is not desired, it is also possible to apply an affine transformation $\boldsymbol{y} = \boldsymbol{\gamma} \odot \boldsymbol{x} + \boldsymbol{\beta}$ with learnable scale $(\boldsymbol{\gamma})$ and mean ($\boldsymbol{\beta}$) parameters ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
 
 The above description explains the core operation of BN during training.
 However, during inference, it is not uncommon to desire predictions for single samples.
 Obviously, this would cause trouble because a mini-batch with a single sample has zero variance.
-Therefore, it is common to accumulate the statistics that are used for normalisation ( $\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$ ), over multiple mini-batches during training.
+Therefore, it is common to accumulate the statistics that are used for normalization ( $\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$ ), over multiple mini-batches during training.
 These accumulated statistics can then be used as estimators for the mean and variance during inference.
 This makes it possible for BN to be used on single samples during inference.
 
 The original reason for introducing BN was to alleviate the so-called _internal covariate shift_, i.e. the change of distributions as the network updates.
 More recent research has pointed out, however, that internal covariate shift does not necessarily deteriorate learning dynamics ([Santurkar et al., 2018](#santurkar18how)).
-Apparently, [Ioffe & Szegedy (2015)](#ioffe15batchnorm) also realised that simply normalising the signal does not suffice to achieve good performance: 
+Apparently, [Ioffe & Szegedy (2015)](#ioffe15batchnorm) also realized that simply normalising the signal does not suffice to achieve good performance: 
 
  > [...] the model blows up when the normalization parameters are computed outside the gradient descent step.
 
  All of this seems to indicate that part of the success of BN is due to the effects it has on the gradient signal.
  The affine transformation in BN simply scales the gradient, such that $\nabla_{\hat{\boldsymbol{x}}} \mathcal{L} = \boldsymbol{\gamma} \odot \nabla_{\boldsymbol{y}} \mathcal{L}.$
- The normalisation operation, on the other hand, transforms the gradient, $\boldsymbol{g} = \nabla_{\hat{\boldsymbol{x}}} \mathcal{L}$, as follows:
+ The normalization operation, on the other hand, transforms the gradient, $\boldsymbol{g} = \nabla_{\hat{\boldsymbol{x}}} \mathcal{L}$, as follows:
 
  $$\nabla_{\boldsymbol{x}} \mathcal{L} = \frac{1}{\boldsymbol{\sigma}_\mathcal{B}} \big(\boldsymbol{g} - \mu_g \,\boldsymbol{1} - \operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) \odot \hat{\boldsymbol{x}} \big),$$
 
 where $\mu_g = \sum_{\boldsymbol{x} \in \mathcal{B}} \nabla_{\hat{\boldsymbol{x}}} \mathcal{L}$ and $\operatorname{cov}(\boldsymbol{g}, \hat{\boldsymbol{x}}) = \frac{1}{|\mathcal{B} |} \sum_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{g} \odot \hat{\boldsymbol{x}}.$
 Note that this directly corresponds to centring the gradients, which is also supposed to improve learning speed ([Schraudolph, 1998](#schraudolph98centering)).
 
-In the end, everyone seems to agree that one of the main benefits of BN is that it enables higher learning rates ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalisation.
-An additional benefit is that BN is scale-invariant and therefore much less sensitive to weight initialisation ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
+In the end, everyone seems to agree that one of the main benefits of BN is that it enables higher learning rates ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Bjorck et al., 2018](#bjorck18understanding); [Santurkar et al., 2018](#santurkar18how); [Luo et al., 2019](#luo19towards)), which results in faster learning and better generalization.
+An additional benefit is that BN is scale-invariant and therefore much less sensitive to weight initialization ([Ioffe & Szegedy, 2015](#ioffe15batchnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
 
 ### Alternatives
 
 <figure id="fig_dims">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/data_dimensions.svg" alt="visualisation of different input data types">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/data_dimensions.svg" alt="visualization of different input data types">
     <figcaption>
         Figure&nbsp;1: Different input types in terms of their typical 
         batch size ($|\mathcal{B}|$), the number of channels/features ($C$) and the <em>size</em> of the signal ($S$) (e.g. width times height for images).
@@ -122,29 +122,29 @@ Although BN provides important benefits, it also comes with a few downsides:
  - BN is not directly applicable to certain input types ([Ba et al. 2016](#ba16layernorm)) and performs poorly when there are **dependencies between samples** in a mini-batch ([Ioffe, 2017](#ioffe17batchrenorm)).
  - BN uses **different statistics for inference** than those used during training ([Ba et al., 2016](#ba16layernorm); [Ioffe, 2017](#ioffe17batchrenorm)).
    This is especially problematic if the distribution during inference is different or drifts away from the training distribution.
- - BN does not play well with **other regularisation** methods ([Hoffer et al., 2018](#hoffer18norm)).
-   This is especially known for $\mathrm{L}_2$-regularisation ([Hoffer et al., 2018](#hoffer18norm)) and dropout ([Li et al., 2019](#li19understanding)).
+ - BN does not play well with **other regularization** methods ([Hoffer et al., 2018](#hoffer18norm)).
+   This is especially known for $\mathrm{L}_2$-regularization ([Hoffer et al., 2018](#hoffer18norm)) and dropout ([Li et al., 2019](#li19understanding)).
  - BN introduces a significant **computational overhead** during training ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Gitman and Ginsburg, 2017](#gitman17comparison)).
    Because of the running averages, also memory requirements increase when introducing BN.
 
-Therefore, alternative normalisation methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
+Therefore, alternative normalization methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
 One family of alternatives simply computes the statistics along different dimensions (see Figure&nbsp;[2](#fig_norm)).
-**Layer Normalisation (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
+**Layer Normalization (LN)** is probably the most prominent example in this category ([Ba et al., 2016](#ba16layernorm)).
 Instead of computing the statistics over samples in a mini-batch, LN uses the statistics of the feature vector itself.
 This makes LN invariant to weight shifts and scaling individual samples.
 BN, on the other hand, is invariant to data shifts and scaling individual neurons.
 LN generally outperforms BN in fully connected and recurrent networks but does not work well for convolutional architectures according to [Ba et al. (2016)](#ba16layernorm).
-**Group Normalisation (GN)** is a slightly modified version of LN that also works well for convolutional networks ([Wu et al., 2018](#wu18groupnorm)).
+**Group Normalization (GN)** is a slightly modified version of LN that also works well for convolutional networks ([Wu et al., 2018](#wu18groupnorm)).
 The idea of GN is to compute statistics over groups of features in the feature vector instead of all features.
 For convolutional networks that should be invariant to changes in contrast, statistics can also be computed over single image channels for each sample.
-This gives rise to a technique known as **Instance Normalisation (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
+This gives rise to a technique known as **Instance Normalization (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
 
 <figure id="fig_norm">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/normalisation_dimensions.svg" alt="visualisation of normalisation methods">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/normalisation_dimensions.svg" alt="visualization of normalization methods">
     <figcaption>
         Figure&nbsp;2: Normalisation methods (Batch, Layer, Instance and Group Normalisation) and the parts of the input they compute their statistics over.
-        Different dimensions are visualised (and explained) in Figure&nbsp;<a href="#fig_dims">1</a>.
+        Different dimensions are visualized (and explained) in Figure&nbsp;<a href="#fig_dims">1</a>.
         The lightly shaded region for LN indicates how it is typically used for image data.
         Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
     </figcaption>
@@ -152,25 +152,25 @@ This gives rise to a technique known as **Instance Normalisation (IN)**, which p
 
 Instead of normalising the inputs, it is also possible to get a normalising effect by rescaling the weights of the network ([Arpit et al., 2016](#arpit16normprop)).
 Especially in convolutional networks, this can significantly reduce the computational overhead.
-With **Weight Normalisation (WN)** ([Salimans & Kingma, 2016](#salimans16weightnorm)), the weight vectors for each neuron are normalised to have unit norm.
-This idea can also be found in a(n independently developed) technique called **Normalisation Propagation (NP)** ([Arpit et al., 2016](#arpit16normprop)).
+With **Weight Normalization (WN)** ([Salimans & Kingma, 2016](#salimans16weightnorm)), the weight vectors for each neuron are normalized to have unit norm.
+This idea can also be found in a(n independently developed) technique called **Normalization Propagation (NP)** ([Arpit et al., 2016](#arpit16normprop)).
 However, in contrast to WN, NP accounts for the effect of (ReLU) activation functions.
 In some sense, NP can be interpreted as a variant of BN where the statistics are computed theoretically (in expectation) rather than on the fly.
-**Spectral Normalisation (SN)**, on the other hand, makes use of an induced matrix norm to normalise the entire weight matrix ([Miyato et al., 2018](#miyato18spectralnorm)).
+**Spectral Normalization (SN)**, on the other hand, makes use of an induced matrix norm to normalise the entire weight matrix ([Miyato et al., 2018](#miyato18spectralnorm)).
 Concretely, the weights are scaled by the reciprocal of an approximation of the largest singular value of the weight matrix.
 
-Whereas WN, NP and SN still involve the computation of some weight norm, it is also possible to obtain normalisation without any computational overhead.
+Whereas WN, NP and SN still involve the computation of some weight norm, it is also possible to obtain normalization without any computational overhead.
 By creating a forward pass that induces attracting fixed points in mean and variance, **Self-Normalising Networks (SNNs)** ([Klambauer et al., 2017](#klambauer17selfnorm)) are able to effectively normalise the signal.
 To achieve these fixed points, it suffices to carefully scale the ELU activation function ([Clevert et al., 2016](#clevert16elu)) and the initial variance of the weights.
-Additionally, [Klambauer et al. (2017)](#klambauer17selfnorm) provide a way to tweak dropout so that it does not interfere with the normalisation.
-Maybe it is useful to point out that SNNs do not consist of explicit normalisation operations.
-In this sense, an SNN could already be seen as an example of _normaliser-free_ networks.
+Additionally, [Klambauer et al. (2017)](#klambauer17selfnorm) provide a way to tweak dropout so that it does not interfere with the normalization.
+Maybe it is useful to point out that SNNs do not consist of explicit normalization operations.
+In this sense, an SNN could already be seen as an example of _normalizer-free_ networks.
 
 
 ## Skip Connections
 
-With normalisation out of the way, we probably want to tackle the _skip connections_.
-After all, [Brock et al. (2021a)](#brock21characterizing) mainly aim to rid Residual Networks (ResNets) of normalisation.
+With normalization out of the way, we probably want to tackle the _skip connections_.
+After all, [Brock et al. (2021a)](#brock21characterizing) mainly aim to rid Residual Networks (ResNets) of normalization.
 Although skip connections already existed long before ResNets were invented, they are often considered as one of the main contributions by the work of [He et al., 2016](#he16resnet).
 In some sense, it almost seems as if skip connections could only become popular after BN was invented.
 Especially if we consider the effects of skip connections on the statistics of signals flowing through the network.
@@ -188,13 +188,13 @@ When the outputs of the residual branch have different dimensions, it is typical
 
 Skip connections became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
 However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was even a thing ([Ripley, 1996](#ripley96pattern)).
-Similar to normalisation methods, skip connections can improve the condition of the optimisation problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
+Similar to normalization methods, skip connections can improve the condition of the optimization problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
 However, skip connections also have benefits in the forward pass:
 e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information should be able to flow through the network without being altered.
 [He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the network can focus on the non-linear part of the transformation (and ignore the linear component).
 
 <figure id="fig_skip">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/skip_connections.svg" alt="visualisation of different types of skip connections">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalised-resnets/skip_connections.svg" alt="visualization of different types of skip connections">
     <figcaption>
         Figure&nbsp;3: Variations on skip connections in ResNets, Densenets and Highway networks.
         The white blocks correspond to the input / skip connection and the blue blocks correspond to the output of the non-linear transformation.
@@ -215,13 +215,13 @@ This comparison does only hold, however, if you are willing to interpret the att
 
 ### Moment Control
 
-Traditional initialisation techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, but they do not work so well in ResNets.
+Traditional initialization techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, but they do not work so well in ResNets.
 The key problem is that the variance can not remain constant when skip connections are involved.
 After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance must be greater than the input variance.
 Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when skip connections are chained together.
 Luckily, these drifting effects can be mitigated to some extent.
 
-Similar to standard initialisation methods, the key idea is to stabilise the variance propagation.
+Similar to standard initialization methods, the key idea is to stabilise the variance propagation.
 To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
 
 $$\boldsymbol{y} = \alpha x + \beta f(\alpha x),$$
@@ -241,7 +241,7 @@ Eventually, they propose to set $\beta = b^l$ after the $l$-th skip connection, 
 Learning the scaling factor $\beta$ in each layer can also make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
 There are of course also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
-One alternative solution is to make use of an empirical approach to weight initialisation ([Mishkin et al., 2016](#mishkin16lsuv)).
+One alternative solution is to make use of an empirical approach to weight initialization ([Mishkin et al., 2016](#mishkin16lsuv)).
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
 Instead of using the reciprocal of the empirical variance as a scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
@@ -251,7 +251,7 @@ For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha =
 However, the more general approach should assure that the outputs of residual branches are weighted similarly at the output of the network, independent of their depth.
 
 
-## Normaliser-Free ResNets
+## Normalizer-Free ResNets
 
 It could be argued that the current popularity of skip connections is due to BN.
 After all, without BN, the skip connections in ResNets would have suffered from the drifting effects discussed [earlier](#moment-control).
@@ -260,15 +260,15 @@ Therefore, it makes sense to research the question of whether BN is just a usefu
 
 ### Old Ideas
 
-Whereas some alternative normalisation methods aimed to simply provide normalisation in scenarios where BN does not work so well, other methods were explicitly designed to reduce or get rid of the normalisation computations (e.g., [Arpit et al., 2016](#arpit16normprop); [Salimans & Kingma, 2016](#salimans16weightnorm); [Klambauer et al., 2017](#klambauer17selfnorm)).
+Whereas some alternative normalization methods aimed to simply provide normalization in scenarios where BN does not work so well, other methods were explicitly designed to reduce or get rid of the normalization computations (e.g., [Arpit et al., 2016](#arpit16normprop); [Salimans & Kingma, 2016](#salimans16weightnorm); [Klambauer et al., 2017](#klambauer17selfnorm)).
 Even the idea of training ResNets without BN is practically as old as ResNets themselves.
-With their Layer-Sequential Unit-Variance (LSUV) initialisation, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialisation for small datasets (CIFAR-10).
-Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalisation (WN) and BN by reconsidering weight initialisation in ResNets.
+With their Layer-Sequential Unit-Variance (LSUV) initialization, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialization for small datasets (CIFAR-10).
+Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalization (WN) and BN by reconsidering weight initialization in ResNets.
 
-Getting rid of BN in ResNets was posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialisation scheme.
+Getting rid of BN in ResNets was posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialization scheme.
 On top of introducing the learnable $\beta$ parameters and the $L^{-1/(2k - 2)}$ scaling in residual branches,
 they set the initial weights for the last layer in each residual branch to zero and introduce scalar biases before every layer in the network.
-With these tricks, Zhang et al. show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalisation.
+With these tricks, Zhang et al. show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalization.
 Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
 The key difference with FixUp is that the initial value for the learnable $\beta$ parameter is set to be less than $1 / \sqrt{L}.$
 As a result, SkipInit does not require the rescaling of initial weights in residual branches or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
@@ -284,9 +284,9 @@ When focusing on ResNets with BN (on the right of Figure&nbsp;[4](#fig_spp)), it
 This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted between every two sub-nets in these ResNets.
 
 <figure id="fig_spp">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalisation on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalization on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
     <figcaption>
-        Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50 at initialisation.
+        Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50 at initialization.
         SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$, $y$-axis on the right).
         The left plot illustrates the difference between ResNets with and without BN layers.
         The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling.
@@ -294,11 +294,11 @@ This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted
     </figcaption>
 </figure>
 
-The goal of Normaliser-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets while preserving the characteristics visualised in the SPPs ([Brock et al., 2021a](#brock21characterizing)).
-To get rid of the exponential variance increase in unnormalised ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
+The goal of Normalizer-Free ResNets (NF-ResNets) is to get rid of the BN layers in ResNets while preserving the characteristics visualized in the SPPs ([Brock et al., 2021a](#brock21characterizing)).
+To get rid of the exponential variance increase in unnormalized ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
 Here, $\operatorname{Var}[\boldsymbol{x}]$ is the variance over all samples in the dataset, such that the $\alpha$ scaling effectively mirrors the division by $\boldsymbol{\sigma}_\mathcal{B}$ in BN (assuming a large enough batch size).
 Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
-This is possible if the inputs to the network are properly normalised (i.e., have unit variance) and the residual branch, $f$, is properly initialised (i.e., preserves variance).
+This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and the residual branch, $f$, is properly initialized (i.e., preserves variance).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
 Although this scheme should allow reducing the variance after every skip connection, it is only used after every sub-net, which typically consists of multiple skip connections.
@@ -307,11 +307,11 @@ This effectively models the variance drops from the reference SPP, which are due
 Rather than aiming for constant variance throughout the network, the goal of NF-ResNets is really to mimic the signal propagation of a ResNet with BN.
 
 <figure id="fig_nfresnet">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalisation (gray lines) and one for a Normaliser-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
+    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalization (gray lines) and one for a Normalizer-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
     <figcaption>
-        Figure&nbsp;5: SPPs comparing an NF-ResNet-50 to a Resnet with BN at initialisation.
+        Figure&nbsp;5: SPPs comparing an NF-ResNet-50 to a Resnet with BN at initialization.
         The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters.
-        The right plot displays the behaviour of an NF-ResNet with Centred Weight Normalisation.
+        The right plot displays the behaviour of an NF-ResNet with Centred Weight Normalization.
         Note that the variance of the residuals in the right plot should give some insights as to why the curves do not overlap.
     </figcaption>
 </figure>
@@ -322,21 +322,21 @@ After all, the considerations that lead to the scaling parameters only cover the
 On top of that, it turns out that the variance of the residual branches (right before it is merged with the skip connection) is not particularly steady.
 This indicates that the residual branches do not properly preserve variance, which is necessary for the analytic computations of $\alpha$ to be correct.
 
-It turns out that both of these discrepancies can be resolved by introducing a variant of Centred Weight Normalisation (CWN; [L. Huang et al., 2017](#huang17centred)) to NF-ResNets.
+It turns out that both of these discrepancies can be resolved by introducing a variant of Centred Weight Normalization (CWN; [L. Huang et al., 2017](#huang17centred)) to NF-ResNets.
 CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and that the variance of the weights is constant.
-[Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalised weights to account for the effect of activation function (cf. [Arpit et al., 2016](#arpit16normprop)).
+[Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalized weights to account for the effect of activation function (cf. [Arpit et al., 2016](#arpit16normprop)).
 The effect of including the rescaled CWN in NF-ResNets is illustrated in the right part of Figure&nbsp;[5](#fig_nfresnet).
 
 ### Performance
 
-Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets with standard regularisation methods perform on par with traditional ResNets that are using BN.
+Empirically, [Brock et al. (2021a)](#brock21characterizing) show that NF-ResNets with standard regularization methods perform on par with traditional ResNets that are using BN.
 An important [detail](https://github.com/deepmind/deepmind-research/blob/ba761289c157fc151c7f06aa37b812d8100561db/nfnets/resnet.py#L158-L159) that is not apparent from the text, however, is that their baseline ResNets use the (standard) "_BN -> ReLU_" order and not the "_ReLU -> BN_" order, which served as the model for the signal propagation of NF-ResNets.
 This is also why the SPPs in Figure&nbsp;[5](#fig_nfresnet), which depict the "_ReLU -> BN_" order, do not perfectly overlap, unlike the figures in ([Brock et al., 2021a](#borck21characterizing)).
 
 Because BN does induce computational overhead, it seems natural to expect NF-ResNets to allow for more computationally efficient models.
-Therefore, [Brock et al. (2021a)](#brock21characterizing) also compare NF-ResNets with a set of architectures that are optimised for efficiency.
-However, it turns out that some of these architectures do not play well with the weight normalisation that is typically used in NF-ResNets.
-As a result, normaliser-free versions of EfficientNets ([Tan & Le, 2019](#tan19efficientnet)) lag behind their BN counterparts.
+Therefore, [Brock et al. (2021a)](#brock21characterizing) also compare NF-ResNets with a set of architectures that are optimized for efficiency.
+However, it turns out that some of these architectures do not play well with the weight normalization that is typically used in NF-ResNets.
+As a result, normalizer-free versions of EfficientNets ([Tan & Le, 2019](#tan19efficientnet)) lag behind their BN counterparts.
 When applied to (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)), however, the performance gap between with EfficientNets can be reduced by introducing the NF-ResNet scheme.
 In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
 
@@ -351,22 +351,22 @@ Assuming that the ideas in NF-ResNets can make BN (at least partly) obsolete, th
 
 First of all, the exact procedure for scaling residual branches is only meaningful for architectures that include (some sort of) skip connections.
 In general, it is not possible to apply the ideas behind NF-ResNets to get rid of BN layers in arbitrary architectures.
-Furthermore, NF-ResNets still rely on normalisation methods to attain good performance &mdash; in contrast to what their name might suggest.
-[Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalisation_, but they do rely on an adaptation of Weight Normalisation to replace BN.
-In this sense, it is arguable whether NF-ResNets are truly normaliser-free.
+Furthermore, NF-ResNets still rely on normalization methods to attain good performance &mdash; in contrast to what their name might suggest.
+[Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalization_, but they do rely on an adaptation of Weight Normalization to replace BN.
+In this sense, it is arguable whether NF-ResNets are truly normalizer-free.
 Finally, some of the problems with BN are not resolved or reintroduced when building competitive NF-ResNets.
-E.g., there are still differences between training and testing when using plain dropout regularisation, CWN still introduces a certain computational overhead during training, etc.
+E.g., there are still differences between training and testing when using plain dropout regularization, CWN still introduces a certain computational overhead during training, etc.
 
 ### Insights
 
 In the end, an NF-ResNet can be interpreted as consisting of different components that model parts of what BN normally does.
 For example, the $\alpha$ scaling factor used in NF-ResNets obviously models the division by the standard deviation of BN.
-It is also easy to see that the implicit regularisation that is attributed to BN can be replaced by explicit regularisation schemes.
+It is also easy to see that the implicit regularization that is attributed to BN can be replaced by explicit regularization schemes.
 Furthermore, the mean subtraction in BN is practically implemented by means of the weight centring in CWN.
 Also, the scale-invariance of the weights of BN is re-introduced through CWN.
 The input scale-invariance that BN introduces in each layer, on the other hand, is lost when using CWN.
 When considering the entire residual branch (or network), however, $\alpha$ does enable some sort of scale-invariance for the entirety of this branch (or network).
-Finally, the affine transformation after the normalisation in BN is modelled by scaling the result of CWN.
+Finally, the affine transformation after the normalization in BN is modelled by scaling the result of CWN.
 Note that the affine shift does not need to be modelled explicitly, since CWN does not annihilate the regular bias parameters of the layers it acts upon, in contrast to BN.
 
 Although the effects of BN on the forward pass seem to be modelled quite well by NF-ResNets, the effects on the backward pass seem to be largely ignored by [Brock et al. (2021a)](#brock21characterizing).
@@ -378,13 +378,13 @@ However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highp
 ### Conclusion
 
 NF-ResNets show that it is possible to get rid of BN in ResNets without throwing away predictive performance.
-However, NF-ResNets still rely on weight normalisation schemes to make the models competitive with their BN counterparts.
-Therefore, it could be argued that NF-ResNets are not entirely _normaliser-free_.
+However, NF-ResNets still rely on weight normalization schemes to make the models competitive with their BN counterparts.
+Therefore, it could be argued that NF-ResNets are not entirely _normalizer-free_.
 It almost seems as if NF-ResNets are an example of how BN can be imitated using different components, rather than how to get rid of it.
 This also means that it is hard to distil meaningful insights as to why/how BN works so well.
 One thing that this approach does make clear is that the backward dynamics due to BN should be part of the explanation.
 
-**TL;DR:** NF-ResNets, rescaled ResNets with Centred Weight Normalisation, can be used to imitate the forward pass of ResNets with BN, but they do not help much to explain what makes BN so successful.
+**TL;DR:** NF-ResNets, rescaled ResNets with Centred Weight Normalization, can be used to imitate the forward pass of ResNets with BN, but they do not help much to explain what makes BN so successful.
 
 ---
 
