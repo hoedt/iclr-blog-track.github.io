@@ -224,7 +224,7 @@ Luckily, these drifting effects can be mitigated to some extent.
 Similar to standard initialization methods, the key idea is to stabilise the variance propagation.
 To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
 
-$$\boldsymbol{y} = \alpha x + \beta f(\alpha x),$$
+$$\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}),$$
 
 which is equivalent to the original formulation when $\alpha = \beta = 1.$
 The key advantage of this formulation is that the variance can be controlled (to some extent) by tuning the newly introduced scaling factors $\alpha$ and $\beta.$
@@ -245,7 +245,7 @@ One alternative solution is to make use of an empirical approach to weight initi
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
 Instead of using the reciprocal of the empirical variance as a scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
-[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha x + \beta f(x),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection. 
+[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\boldsymbol{x}),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection. 
 Here, $c$ is an arbitrary constant, which was eventually set to be the number of residual branches, $L$.
 For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha = 1 / \sqrt{2},$ as suggested by [Balduzzi et al. (2017)](#balduzzi17shattered).
 However, the more general approach should assure that the outputs of residual branches are weighted similarly at the output of the network, independent of their depth.
@@ -302,7 +302,7 @@ This is possible if the inputs to the network are properly normalized (i.e., hav
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
 Although this scheme should allow reducing the variance after every skip connection, it is only used after every sub-net, which typically consists of multiple skip connections.
-For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and **not on the skip connection**, such that $\boldsymbol{y} = x + \beta f(\alpha x).$
+For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and **not on the skip connection**, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}).$
 This effectively models the variance drops from the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see Figure&nbsp;[4](#fig_spp)).
 Rather than aiming for constant variance throughout the network, the goal of NF-ResNets is really to mimic the signal propagation of a ResNet with BN.
 
