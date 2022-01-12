@@ -5,6 +5,10 @@ tags: [normalization, initialization, propagation, skip connections, residual ne
 authors: Anonymous; 
 ---
 
+<style>
+    figcaption { color: gray; }
+</style>
+
 Since the advent of Batch Normalization (BN) almost every state-of-the-art (SOTA) method uses some form of normalization.
 After all, normalization generally speeds up learning and leads to models that generalise better than their unnormalized counterparts.
 This turns out to be especially useful when using some form of skip connections, which are prominent in Residual Networks (ResNets), for example.
@@ -186,6 +190,13 @@ where $f$ represents some non-linear transformation ([He et al., 2016a](#he16res
 This non-linear transformation is typically a sub-network that is commonly referred to as the _residual branch_ or _residual connection_.
 When the outputs of the residual branch have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connection with that of the residual connection.
 
+Since code is often more informative than vague descriptions, a [PyTorch](https://pytorch.org) implementation of the skip connections, as presented in ([He et al., 2016b](#he16preresnet)), is given below.
+The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)), for which an [implementation](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L86-L141) is included in the [Torchvision](https://pytorch.org/vision/stable/models.html#id10) library.
+
+```python
+{% include 2021-12-01-unnormalized-resnets/preresnet.py %}
+```
+
 Skip connections became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
 However, they were already commonly used as a trick to improve learning in multi-layer networks before deep learning was even a thing ([Ripley, 1996](#ripley96pattern)).
 Similar to normalization methods, skip connections can improve the condition of the optimization problem by making it harder for the Hessian to become singular ([van der Smagt & Hirzinger, 1998](#vandersmagt98solving)).
@@ -204,7 +215,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information sh
 
 The general formulation of skip connections that we provided earlier, captures the idea of skip connections very well.
 As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in Figure&nbsp;[3](#fig_skip)).
-Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet)).
+Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet); see comments in code snippet).
 In DenseNets ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections are concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
 Other variants of skip connections make use of masks to select which information is passed on.
@@ -228,6 +239,15 @@ $$\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}),$$
 
 which is equivalent to the original formulation when $\alpha = \beta = 1.$
 The key advantage of this formulation is that the variance can be controlled (to some extent) by tuning the newly introduced scaling factors $\alpha$ and $\beta.$
+In terms of code, these modifications could look something like
+
+```python
+    def forward(self, x):
+        x = self.preact(self.alpha * x)
+        skip = self.downsample(x)
+        residual = self.residual_branch(x)
+        return self.beta * residual + skip
+```
 
 A very simple counter-measure to the variance explosion in ResNets is to set $\alpha = 1 / \sqrt{2}$ ([Balduzzi et al., 2017](#balduzzi17shattered)).
 Assuming that the residual branch approximately preserves the variance, the variances of $\boldsymbol{y}$ and $\boldsymbol{x}$ should be roughly the same.
@@ -278,10 +298,32 @@ As a result, SkipInit does not require the rescaling of initial weights in resid
 Although the results of prior work look promising, there is still a performance gap compared to ResNets with BN.
 To close this gap, [Brock et al. (2021a)](#brock21characterizing) suggest studying the propagation of mean and variance through ResNets by means of so-called Signal Propagation Plots (SPPs).
 These SPPs simply visualise the squared mean and variance of the activations after each skip connection, as well as the variance at the end of every residual branch (before the skip connection).
+
+To compute these values, the forward pass of the network must be slightly tweaked.
+To this end, we can define a new method or a function that simulates the forward pass and extracts the necessary statistics for each skip connection, as follows:
+
+```python
+    @torch.no_grad()
+    def signal_prop(self, x, dim=(0, -1, -2)):
+        x = self.preact(x)
+        skip = self.downsample(x)
+        residual = self.residual_branch(x)
+        out = residual + skip
+
+        # compute necessary statistics
+        out_mu2 = torch.mean(out.mean(dim) ** 2).item()
+        out_var = torch.mean(out.var(dim)).item()
+        res_var = torch.mean(residual.var(dim)).item()
+        return out, (out_mu2, out_var, res_var)
+```
+
+This allows us to analyse the statistics for a single skip connection.
+By propagating a white noise signal (e.g., `torch.randn(1000, 3, 224, 224))`) through the entire ResNet, we obtain the data that allows us to produce SPPs.
+
 Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
 The SPPs on the left clearly illustrate that BN transforms the exponential growth to a linear increase in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
 When focusing on ResNets with BN (on the right of Figure&nbsp;[4](#fig_spp)), it is clear that mean and variance are reduced after every sub-net, each of which consists of a few skip connections.
-This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted between every two sub-nets in these ResNets.
+This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted between every two sub-nets in these ResNets (remember the code snippet from earlier?).
 
 <figure id="fig_spp">
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalization on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
@@ -298,13 +340,27 @@ The goal of Normalizer-Free ResNets (NF-ResNets) is to get rid of the BN layers 
 To get rid of the exponential variance increase in unnormalized ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
 Here, $\operatorname{Var}[\boldsymbol{x}]$ is the variance over all samples in the dataset, such that the $\alpha$ scaling effectively mirrors the division by $\boldsymbol{\sigma}_\mathcal{B}$ in BN (assuming a large enough batch size).
 Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
-This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and the residual branch, $f$, is properly initialized (i.e., preserves variance).
+This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and the residual branch, $f$, is properly preserves variance (i.e. is initialized correctly).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
-Although this scheme should allow reducing the variance after every skip connection, it is only used after every sub-net, which typically consists of multiple skip connections.
-For all the other skip connections, the $\alpha$ rescaling is only applied on the residual branch and **not on the skip connection**, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}).$
-This effectively models the variance drops from the reference SPP, which are due to the pre-activation blocks between layers in the ResNets (see Figure&nbsp;[4](#fig_spp)).
-Rather than aiming for constant variance throughout the network, the goal of NF-ResNets is really to mimic the signal propagation of a ResNet with BN.
+When comparing the code for a NF-ResNet with that for a regular batch-normalized ResNet, we find that there are only a few minor changes.
+So much so that it is more efficient to consider the `diff` output than the full code.
+```diff
+{%include 2021-12-01-unnormalized-resnets/nfresnet.patch %}
+```
+This patch clearly shows that apart from removing the BN layers and introducing the $\alpha$ and $\beta$ parameters, the BN layer in the pre-activation has to be replaced by the newly introduced $\alpha$ scaling.
+That is effectively everything that needs to be done.
+To be fair, this `Scaling` module is not standard in PyTorch, but it is easy enough to create it:
+```python
+{% include 2021-12-01-unnormalized-resnets/scaling.py %}
+```
+
+With the code at hand, it might be useful to point out that the implemented $\alpha$ scaling does not perfectly conform with our general formulation for ResNets.
+After all, the pre-activation layers mostly end up affecting only the inputs to the residual branch, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}).$
+Only between the different sub-networks, which consist of multiple skip connections, the pre-activations are applied globally and the signal will be normalised.
+This also explains the variance drops in the SPPs for regular ResNets (see Figure&nbsp;[4](#fig_spp)).
+Note that this also means that the variance within sub-networks of a NF-ResNet will increase in the same way as for a ResNet with BN.
+Although it would have been perfectly possible to maintain a steady variance, NF-ResNets are effectively designed to mimic the signal propagation due to BN layers in regular ResNets.
 
 <figure id="fig_nfresnet">
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalization (gray lines) and one for a Normalizer-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
