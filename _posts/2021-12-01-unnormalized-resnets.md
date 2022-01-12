@@ -396,6 +396,54 @@ As a result, normalizer-free versions of EfficientNets ([Tan & Le, 2019](#tan19e
 When applied to (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)), however, the performance gap between with EfficientNets can be reduced by introducing the NF-ResNet scheme.
 In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
 
+Open question (TODO): include this beast/full NF-ResNet implementation?
+```python
+class CentredWeightNormalisation:
+    
+    @staticmethod
+    def compute_gamma(phi):
+        if isinstance(phi, nn.ReLU):
+            return (1 - 1 / 3.141592) / 2
+        else:
+            return torch.var(phi(torch.randn(1024, 2048)), dim=1).mean()
+    
+    def __init__(self, phi: nn.Module = nn.ReLU(), name: str = 'weight', dim=(1, 2, 3)):
+        gain = 1. / self.compute_gamma(phi)
+        
+        self.name = name
+        self.dim = dim
+        self.phi_cls = phi.__class__
+        self.sqrt_gain = gain ** .5
+    
+    def __call__(self, module: nn.Module):
+        w = getattr(module, self.name, None)
+        if w is not None:
+            del module._parameters[self.name]
+            module.register_buffer(self.name, w.detach())
+            module.register_parameter("raw_" + self.name, nn.Parameter(w))
+            module.register_forward_pre_hook(self.normalise_weights)
+        elif isinstance(module, self.phi_cls):
+            # necessary to match plots from paper
+            module.forward = lambda x: self.sqrt_gain * self.phi_cls.forward(module, x)
+    
+    @property
+    def gain(self) -> float:
+        return self.sqrt_gain ** 2
+    
+    @gain.setter
+    def gain(self, gain: float):
+        self.sqrt_gain = gain ** .5
+    
+    def normalise_weights(self, module, inputs):
+        w = getattr(module, "raw_" + self.name)
+        mean = w.mean(dim=self.dim, keepdims=True)
+        w = w - mean
+        w_norm = torch.sum(w ** 2, dim=self.dim, keepdims=True)
+        w = w / w_norm ** .5
+        setattr(module, self.name, w)
+```
+
+
 ## Discussion
 
 NF-ResNets show that it is possible to build networks without BN that are able to achieve competitive prediction performance.
