@@ -41,6 +41,7 @@ The goal of this blog post is to provide some insights w.r.t. these questions us
     * [Limitations](#limitations)
     * [Insights](#insights)
     * [Conclusion](#conclusion)
+ - [Extra Code Snippets](#extra-code-snippets)
  - [References](#references)
 
 
@@ -190,11 +191,16 @@ where $f$ represents some non-linear transformation ([He et al., 2016a](#he16res
 This non-linear transformation is typically a sub-network that is commonly referred to as the _residual branch_ or _residual connection_.
 When the outputs of the residual branch have different dimensions, it is typical to use a linear transformation to match the output dimension of the skip connection with that of the residual connection.
 
-Since code is often more informative than vague descriptions, a [PyTorch](https://pytorch.org) implementation of the skip connections, as presented in ([He et al., 2016b](#he16preresnet)), is given below.
-The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)), for which an [implementation](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L86-L141) is included in the [Torchvision](https://pytorch.org/vision/stable/models.html#id10) library.
-
+Since it often helps to have a few lines of code to understand these vague descriptions, an implementation of the skip connections from ([He et al., 2016b](#he16preresnet)) is given below.
+The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)).
+For a complete implementation of this skip connection module, we refer to the [code](#pre-activation-resnets) at the end of this post
 ```python
-{% include 2021-12-01-unnormalized-resnets/preresnet.py %}
+    def forward(self, x):
+        x = self.preact(x)  # diff 1: compute global pre-activations
+        skip = self.downsample(x)
+        residual = self.residual_branch(x)
+        # return torch.relu(residual + skip) (diff 2)
+        return residual + skip
 ```
 
 Skip connections became very popular in computer vision due to the work of He et al. ([2016a](#he16resnet)).
@@ -305,6 +311,7 @@ To this end, we can define a new method or a function that simulates the forward
 ```python
     @torch.no_grad()
     def signal_prop(self, x, dim=(0, -1, -2)):
+        # forward code
         x = self.preact(x)
         skip = self.downsample(x)
         residual = self.residual_branch(x)
@@ -319,6 +326,7 @@ To this end, we can define a new method or a function that simulates the forward
 
 This allows us to analyse the statistics for a single skip connection.
 By propagating a white noise signal (e.g., `torch.randn(1000, 3, 224, 224))`) through the entire ResNet, we obtain the data that allows us to produce SPPs.
+We refer to the end of this post for an example [implementation](#multi-layer-spp) of a full NF-ResNet with `signal_prop` method.
 
 Figure&nbsp;[4](#fig_spp) provides an example of the SPPs for a pre-activation ResNets (or v2 ResNets, cf. [He et al., 2016b](#he16identity)) with and without BN.
 The SPPs on the left clearly illustrate that BN transforms the exponential growth to a linear increase in ResNets, as described in theory (e.g., [Balduzzi et al., 2017](#balduzzi17shattered); [De & Smith, 2020](#de20skipinit)).
@@ -343,20 +351,8 @@ Unlike BN, however, the scaling in NF-ResNets is computed analytically for every
 This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and the residual branch, $f$, is properly preserves variance (i.e. is initialized correctly).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
-When comparing the code for a NF-ResNet with that for a regular batch-normalized ResNet, we find that there are only a few minor changes.
-So much so that it is more efficient to consider the `diff` output than the full code.
-```diff
-{%include 2021-12-01-unnormalized-resnets/nfresnet.patch %}
-```
-This patch clearly shows that apart from removing the BN layers and introducing the $\alpha$ and $\beta$ parameters, the BN layer in the pre-activation has to be replaced by the newly introduced $\alpha$ scaling.
-That is effectively everything that needs to be done.
-To be fair, this `Scaling` module is not standard in PyTorch, but it is easy enough to create it:
-```python
-{% include 2021-12-01-unnormalized-resnets/scaling.py %}
-```
-
-With the code at hand, it might be useful to point out that the implemented $\alpha$ scaling does not perfectly conform with our general formulation for ResNets.
-After all, the pre-activation layers mostly end up affecting only the inputs to the residual branch, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}).$
+It might be useful to point out that the proposed $\alpha$ scaling does not perfectly conform with our general formulation for ResNets.
+After all, the pre-activation layers mostly end up affecting only the inputs to the residual branch, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x})$ (see [code](#extra-code-snippets) for details).
 Only between the different sub-networks, which consist of multiple skip connections, the pre-activations are applied globally and the signal will be normalised.
 This also explains the variance drops in the SPPs for regular ResNets (see Figure&nbsp;[4](#fig_spp)).
 Note that this also means that the variance within sub-networks of a NF-ResNet will increase in the same way as for a ResNet with BN.
@@ -395,53 +391,6 @@ However, it turns out that some of these architectures do not play well with the
 As a result, normalizer-free versions of EfficientNets ([Tan & Le, 2019](#tan19efficientnet)) lag behind their BN counterparts.
 When applied to (naive) RegNets ([Radosavovic et al., 2020](#radosovic20regnet)), however, the performance gap between with EfficientNets can be reduced by introducing the NF-ResNet scheme.
 In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF-ResNets in combination with gradient clipping are able to outperform similar networks with BN.
-
-Open question (TODO): include this beast/full NF-ResNet implementation?
-```python
-class CentredWeightNormalisation:
-    
-    @staticmethod
-    def compute_gamma(phi):
-        if isinstance(phi, nn.ReLU):
-            return (1 - 1 / 3.141592) / 2
-        else:
-            return torch.var(phi(torch.randn(1024, 2048)), dim=1).mean()
-    
-    def __init__(self, phi: nn.Module = nn.ReLU(), name: str = 'weight', dim=(1, 2, 3)):
-        gain = 1. / self.compute_gamma(phi)
-        
-        self.name = name
-        self.dim = dim
-        self.phi_cls = phi.__class__
-        self.sqrt_gain = gain ** .5
-    
-    def __call__(self, module: nn.Module):
-        w = getattr(module, self.name, None)
-        if w is not None:
-            del module._parameters[self.name]
-            module.register_buffer(self.name, w.detach())
-            module.register_parameter("raw_" + self.name, nn.Parameter(w))
-            module.register_forward_pre_hook(self.normalise_weights)
-        elif isinstance(module, self.phi_cls):
-            # necessary to match plots from paper
-            module.forward = lambda x: self.sqrt_gain * self.phi_cls.forward(module, x)
-    
-    @property
-    def gain(self) -> float:
-        return self.sqrt_gain ** 2
-    
-    @gain.setter
-    def gain(self, gain: float):
-        self.sqrt_gain = gain ** .5
-    
-    def normalise_weights(self, module, inputs):
-        w = getattr(module, "raw_" + self.name)
-        mean = w.mean(dim=self.dim, keepdims=True)
-        w = w - mean
-        w_norm = torch.sum(w ** 2, dim=self.dim, keepdims=True)
-        w = w / w_norm ** .5
-        setattr(module, self.name, w)
-```
 
 
 ## Discussion
@@ -491,6 +440,56 @@ One thing that this approach does make clear is that the backward dynamics due t
 **TL;DR:** NF-ResNets, rescaled ResNets with Centered Weight Normalization, can be used to imitate the forward pass of ResNets with BN, but they do not help much to explain what makes BN so successful.
 
 ---
+
+## Extra Code Snippets
+
+To facilitate implementation of pre-residual networks in pytorch and to give a full example of how to implement the signal propagation plotting, we provide additional code snippets in [PyTorch](https://pytorch.org).
+
+#### Pre-activation ResNets
+
+The first snippet implements skip connections according to ([He et al., 2016b](#he16preresnet)).
+The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)), for which an [implementation](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L86-L141) is included in the [Torchvision](https://pytorch.org/vision/stable/models.html#id10) library.
+
+```python
+{% include 2021-12-01-unnormalized-resnets/preresnet_block.py %}
+```
+
+#### NF-ResNets
+
+When comparing the code for a skip connection between an NF-ResNet and a regular batch-normalized ResNet, we find that there are only a few minor changes.
+So much so that it is more efficient to consider the `diff` output than the full code.
+
+```diff
+{%include 2021-12-01-unnormalized-resnets/nfresnet_block.patch %}
+```
+
+The patch above shows that apart from removing the BN layers and introducing the $\alpha$ and $\beta$ parameters, the BN layer in the pre-activation has to be replaced by the $\alpha$ scaling that is introduced in NF-ResNets.
+These changes are effectively everything that needs to be done.
+To be fair, this `Scaling` module is not standard in PyTorch, but it is easy enough to create it:
+
+```python
+{% include 2021-12-01-unnormalized-resnets/scaling.py %}
+```
+
+Putting everything together, including the `signal_prop` method introduced [earlier](#imitating-signal-propagation), the resulting code should correspond to the following:
+
+```python
+{% include 2021-12-01-unnormalized-resnets/nfresnet_block.py %}
+```
+
+The code for a full NF-ResNet (with multiple multi-layer sub-nets) can be found in a code snippets for [multi-layer SPPs](#multi-layer-spps).
+
+#### Multi-layer SPPs
+
+In order to give an example of how to collect the SPP data for a multi-layer ResNet, the snippet below provides code for an NF-ResNet.
+For the sake of _brevity_, the implementation for CWN has been omitted here.
+This code is inspired by the the [`ResNet`](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L144-L249) implementation from Torchvision.
+If you want to use this code, make sure that the `NFResidualBottleneck` module also provides a `signal_prop` method, as introduced [earlier](#imitating-signal-propagation).
+
+```python
+{% include 2021-12-01-unnormalized-resnets/nfresnet_spp.py %}
+```
+
 
 ## References
 
