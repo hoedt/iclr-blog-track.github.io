@@ -9,7 +9,7 @@ authors: Anonymous;
     figcaption { color: gray; }
 </style>
 
-Since the advent of Batch Normalization (BN) almost every state-of-the-art (SOTA) method uses some form of normalization.
+Since the advent of Batch Normalization (BN), almost every state-of-the-art (SOTA) method uses some form of normalization.
 After all, normalization generally speeds up learning and leads to models that generalise better than their unnormalized counterparts.
 This turns out to be especially useful when using some form of skip connections, which are prominent in Residual Networks (ResNets), for example.
 However, [Brock et al. (2021a)](#brock21characterizing) suggest that SOTA performance can also be achieved using **ResNets without normalization**!
@@ -19,7 +19,7 @@ The fact that Brock et al. went out of their way to get rid of something as simp
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
  3. Can this also work for other architectures[?](#limitations)
- 4. Does this allow to gain insights into why normalization works so well[?](#normalization-insights)
+ 4. Does this allow us to gain insights into why normalization works so well[?](#normalization-insights)
  5. Wait a second... Are they getting rid of normalization or just BN?
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
@@ -221,7 +221,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information sh
 
 The general formulation of skip connections that we provided earlier, captures the idea of skip connections very well.
 As you might have expected, however, there are plenty of variations on the exact formulation (a few of which are illustrated in Figure&nbsp;[3](#fig_skip)).
-Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet); see comments in code snippet).
+Strictly speaking, even [He et al., (2016a)](#he16resnet) do not adhere to their own formulation because they apply an activation function on what we denoted as $\boldsymbol{y}$ ([He et al., 2016b](#he16preresnet); see code snippet).
 In DenseNets ([G. Huang et al., 2017](#huang17densenet)), the outputs of the skip and residual connections are concatenated instead of aggregated by means of a sum.
 This retains more of the information for subsequent layers.
 Other variants of skip connections make use of masks to select which information is passed on.
@@ -297,7 +297,7 @@ they set the initial weights for the last layer in each residual branch to zero 
 With these tricks, Zhang et al. show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalization.
 Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
 The key difference with FixUp is that the initial value for the learnable $\beta$ parameter is set to be less than $1 / \sqrt{L}.$
-As a result, SkipInit does not require the rescaling of initial weights in residual branches or setting weights to zero, which are considered crucial parts in the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
+As a result, SkipInit does not require the rescaling of initial weights in residual branches or setting weights to zero, which are considered crucial parts of the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
 
 ### Imitating Signal Propagation
 
@@ -348,14 +348,14 @@ The goal of Normalizer-Free ResNets (NF-ResNets) is to get rid of the BN layers 
 To get rid of the exponential variance increase in unnormalized ResNets, it suffices to set $\alpha = 1 / \sqrt{\operatorname{Var}[\boldsymbol{x}]}$ in our modified formulation of ResNets.
 Here, $\operatorname{Var}[\boldsymbol{x}]$ is the variance over all samples in the dataset, such that the $\alpha$ scaling effectively mirrors the division by $\boldsymbol{\sigma}_\mathcal{B}$ in BN (assuming a large enough batch size).
 Unlike BN, however, the scaling in NF-ResNets is computed analytically for every skip connection.
-This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and the residual branch, $f$, is properly preserves variance (i.e. is initialized correctly).
+This is possible if the inputs to the network are properly normalized (i.e., have unit variance) and if the residual branch, $f$, properly preserves variance (i.e. is initialized correctly).
 The $\beta$ parameter, on the other hand, is simply used as a hyper-parameter to directly control the variance increase after every skip connection.
 
 It might be useful to point out that the proposed $\alpha$ scaling does not perfectly conform with our general formulation for ResNets.
 After all, the pre-activation layers mostly end up affecting only the inputs to the residual branch, such that $\boldsymbol{y} = \boldsymbol{x} + \beta f(\alpha \boldsymbol{x})$ (see [code](#extra-code-snippets) for details).
 Only between the different sub-networks, which consist of multiple skip connections, the pre-activations are applied globally and the signal will be normalised.
 This also explains the variance drops in the SPPs for regular ResNets (see Figure&nbsp;[4](#fig_spp)).
-Note that this also means that the variance within sub-networks of a NF-ResNet will increase in the same way as for a ResNet with BN.
+Note that this also means that the variance within sub-networks of an NF-ResNet will increase in the same way as for a ResNet with BN.
 Although it would have been perfectly possible to maintain a steady variance, NF-ResNets are effectively designed to mimic the signal propagation due to BN layers in regular ResNets.
 
 <figure id="fig_nfresnet">
@@ -376,7 +376,7 @@ This indicates that the residual branches do not properly preserve variance, whi
 
 It turns out that both of these discrepancies can be resolved by introducing a variant of Centered Weight Normalization (CWN; [L. Huang et al., 2017](#huang17centred)) to NF-ResNets.
 CWN simply applies WN after subtracting the weight mean from each weight vector, which ensures that every output has zero mean and that the variance of the weights is constant.
-[Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalized weights to account for the effect of activation function (cf. [Arpit et al., 2016](#arpit16normprop)).
+[Brock et al. (2021a)](#brock21characterizing) additionally rescale the normalized weights to account for the effect of activation functions (cf. [Arpit et al., 2016](#arpit16normprop)).
 The effect of including the rescaled CWN in NF-ResNets is illustrated in the right part of Figure&nbsp;[5](#fig_nfresnet).
 
 ### Performance
@@ -443,7 +443,7 @@ One thing that this approach does make clear is that the backward dynamics due t
 
 ## Extra Code Snippets
 
-To facilitate implementation of pre-residual networks in pytorch and to give a full example of how to implement the signal propagation plotting, we provide additional code snippets in [PyTorch](https://pytorch.org).
+To facilitate the implementation of pre-residual networks in pytorch and to give a full example of how to implement the signal propagation plotting, we provide additional code snippets in [PyTorch](https://pytorch.org).
 
 #### Pre-activation ResNets
 
@@ -483,7 +483,7 @@ The code for a full NF-ResNet (with multiple multi-layer sub-nets) can be found 
 
 In order to give an example of how to collect the SPP data for a multi-layer ResNet, the snippet below provides code for an NF-ResNet.
 For the sake of _brevity_, the implementation for CWN has been omitted here.
-This code is inspired by the the [`ResNet`](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L144-L249) implementation from Torchvision.
+This code is inspired by the [`ResNet`](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L144-L249) implementation from Torchvision.
 If you want to use this code, make sure that the `NFResidualBottleneck` module also provides a `signal_prop` method, as introduced [earlier](#imitating-signal-propagation).
 
 ```python
