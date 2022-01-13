@@ -193,7 +193,7 @@ When the outputs of the residual branch have different dimensions, it is typical
 
 Since it often helps to have a few lines of code to understand these vague descriptions, an implementation of the skip connections from ([He et al., 2016b](#he16preresnet)) is given below.
 The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)).
-For a complete implementation of this skip connection module, we refer to the [code](#pre-activation-resnets) at the end of this post
+For a complete implementation of this skip connection module, we refer to the [code](#pre-activation-resnets) at the end of this post.
 ```python
     def forward(self, x):
         x = self.preact(x)  # diff 1: compute global pre-activations
