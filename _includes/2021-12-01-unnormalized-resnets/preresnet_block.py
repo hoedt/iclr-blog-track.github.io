@@ -4,6 +4,8 @@ from typing import Callable
 
 class PreResidualBottleneck(nn.Module):
 
+    expansion = 4
+
     def __init__(self,
         inplanes: int,
         planes: int,
@@ -42,8 +44,8 @@ class PreResidualBottleneck(nn.Module):
             nn.Conv2d(width, width, kernel_size, stride, padding=dilation,
                       dilation=dilation, groups=groups, bias=False),
             norm_layer(width), nn.ReLU(),
-            nn.Conv2d(width, planes * 4, 1, bias=False),
-            # norm_layer(planes * 4),
+            nn.Conv2d(width, planes * self.expansion, 1, bias=False),
+            # norm_layer(planes * self.expansion),
         )
 
     def forward(self, x):

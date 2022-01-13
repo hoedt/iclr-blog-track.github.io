@@ -3,24 +3,24 @@
 -class PreResidualBottleneck(nn.Module):
 +class NFResidualBottleneck(nn.Module):
  
-@@ -14,3 +14,4 @@
+@@ -16,3 +16,4 @@
          dilation: int = 1,
 -        norm_layer: Callable[[int], nn.Module] = None,
 +        alpha: float = 1.,
 +        beta: float = 1.,
          no_preact: bool = False,  # additional argument
-@@ -18,4 +19,3 @@
+@@ -20,4 +21,3 @@
          super().__init__()
 -        if norm_layer is None:
 -            norm_layer = nn.BatchNorm2d
 +        self.beta = beta
  
-@@ -23,3 +23,3 @@
+@@ -25,3 +25,3 @@
          preact_layers = [] if no_preact else [
 -            norm_layer(inplanes),
 +            Scaling(alpha),
              nn.ReLU(),
-@@ -39,8 +39,8 @@
+@@ -41,8 +41,8 @@
              *residual_preact,  # include residual pre-activations
 -            nn.Conv2d(inplanes, width, 1, bias=False),
 -            norm_layer(width), nn.ReLU(),
@@ -29,12 +29,12 @@
              nn.Conv2d(width, width, kernel_size, stride, padding=dilation,
 -                      dilation=dilation, groups=groups, bias=False),
 -            norm_layer(width), nn.ReLU(),
--            nn.Conv2d(width, planes * 4, 1, bias=False),
+-            nn.Conv2d(width, planes * self.expansion, 1, bias=False),
 +                      dilation=dilation, groups=groups, bias=True),
 +            nn.ReLU(),
-+            nn.Conv2d(width, planes * 4, 1, bias=True),
-             # norm_layer(planes * 4),
-@@ -53,2 +53,2 @@
++            nn.Conv2d(width, planes * self.expansion, 1, bias=True),
+             # norm_layer(planes * self.expansion),
+@@ -55,2 +55,2 @@
          # return torch.relu(residual + skip)
 -        return residual + skip
 +        return self.beta * residual + skip
