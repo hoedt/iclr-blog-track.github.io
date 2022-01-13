@@ -59,7 +59,7 @@ class NFResidualBottleneck(nn.Module):
         x = self.preact(x)
         skip = self.downsample(x)
         residual = self.residual_branch(x)
-        out = residual + skip
+        out = self.beta * residual + skip
 
         # compute necessary statistics
         out_mu2 = torch.mean(out.mean(dim) ** 2).item()
