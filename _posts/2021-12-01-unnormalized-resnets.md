@@ -18,9 +18,9 @@ The fact that Brock et al. went out of their way to get rid of something as simp
 
  1. Why get rid of BN in the first place[?](#alternatives)
  2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
- 3. Can this also work for other architectures[?](#limitations)
- 4. Does this allow us to gain insights into why normalization works so well[?](#normalization-insights)
- 5. Wait a second... Are they getting rid of normalization or just BN?
+ 3. Is BN going to become obsolete in the near future[?](#limitations)
+ 4. Does this allow us to gain insights into why BN works so well[?](#insights)
+ 5. Wait a second... Are they getting rid of normalization or just BN[?](#conclusion)
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
 
@@ -82,7 +82,16 @@ $$\hat{\boldsymbol{x}} = \frac{\boldsymbol{x} - \boldsymbol{\mu}_\mathcal{B}}{\b
 
 Here $\boldsymbol{\mu}\_\mathcal{B} = \frac{1}{|\mathcal{B}|} \sum\_{\boldsymbol{x} \in \mathcal{B}} \boldsymbol{x}$ is the mean over the inputs in the mini-batch and $\boldsymbol{\sigma}_\mathcal{B}$ is the corresponding standard deviation.
 Also, note that the division is element-wise and generally is numerically stabilized by some $\varepsilon$ when implemented.
-In case a zero mean and unit variance is not desired, it is also possible to apply an affine transformation $\boldsymbol{y} = \boldsymbol{\gamma} \odot \boldsymbol{x} + \boldsymbol{\beta}$ with learnable scale $(\boldsymbol{\gamma})$ and mean ($\boldsymbol{\beta}$) parameters ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+In case a zero mean and unit variance is not desired, it is also possible to apply an affine transformation $\boldsymbol{y} = \boldsymbol{\gamma} \odot \hat{\boldsymbol{x}} + \boldsymbol{\beta}$ with learnable scale $(\boldsymbol{\gamma})$ and mean ($\boldsymbol{\beta}$) parameters ([Ioffe & Szegedy, 2015](#ioffe15batchnorm)).
+Putting these formulas together in ([PyTorch](https://pytorch.org)) code, BN can be summarised as follows:
+
+```python
+def batch_normalize(x, gamma=1., beta=0., eps=1e-5):
+    mu = torch.mean(x, dim=(0, -1, -2))
+    var = torch.var(x, dim=(0, -1, -2))
+    x_hat = (x - mu) / torch.sqrt(var + eps)
+    return gamma * x_hat + beta
+```
 
 The above description explains the core operation of BN during training.
 However, during inference, it is not uncommon to desire predictions for single samples.
@@ -111,6 +120,7 @@ An additional benefit is that BN is scale-invariant and therefore much less sens
 
 ### Alternatives
 
+Why would we ever want to get rid of BN then?
 Although BN provides important benefits, it also comes with a few downsides:
 
  - BN does not work well with **small batch sizes** ([Ba et al., 2016](#ba16layernorm); [Salimans & Kingma, 2016](#salimans16weightnorm); [Ioffe, 2017](#ioffe17batchrenorm)).
@@ -227,7 +237,7 @@ This retains more of the information for subsequent layers.
 Other variants of skip connections make use of masks to select which information is passed on.
 Highway networks ([Srivasta et al., 2015](#srivasta15highway)) make use of a gating mechanism similar to that in Long Short-Term Memory (LSTM) ([Hochreiter et al., 1997](#hochreiter97lstm)).
 These gates enable the network to learn how information from the skip connection is to be combined with that of the residual branch.
-Similarly, transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as a variation on highway networks without residual branches.
+Similarly, Transformers ([Vaswani et al., 2017](#vaswani17attention)) could be interpreted as a variation on highway networks without residual branches.
 This comparison does only hold, however, if you are willing to interpret the attention mask as some form of complex gate for the skip connection.
 
 ### Moment Control
@@ -237,6 +247,7 @@ The key problem is that the variance can not remain constant when skip connectio
 After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance must be greater than the input variance.
 Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when skip connections are chained together.
 Luckily, these drifting effects can be mitigated to some extent.
+On one side by using BN, but what are the alternatives exactly?
 
 Similar to standard initialization methods, the key idea to counter drifting in ResNets is to stabilise the variance propagation.
 To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
@@ -397,7 +408,7 @@ In subsequent work, [Brock et al. (2021b)](#brock21highperformance) show that NF
 
 NF-ResNets show that it is possible to build networks without BN that are able to achieve competitive prediction performance.
 It is not yet entirely clear whether the ideas of NF-ResNets could make BN entirely obsolete, however.
-Therefore, it is probably to take a closer look at what the limitations of NF-ResNets are.
+Therefore, it should be interesting to take a closer look at what the limitations of NF-ResNets are.
 Assuming that the ideas in NF-ResNets can make BN (at least partly) obsolete, this should also provide some insights as to what the important factors are to explain the success of BN.
 
 ### Limitations
