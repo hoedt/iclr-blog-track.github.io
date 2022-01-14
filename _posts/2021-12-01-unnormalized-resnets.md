@@ -65,7 +65,7 @@ Instead, the data is _normalized_ to have zero mean and unit variance to get at 
 
 When considering multi-layer networks, the expectation would be that things get more complicated.
 However, it turns out that the benefits of normalizing the input data for linear regression directly carry over to the individual layers of a multi-layer network ([Lecun et al., 1998](#lecun98efficient)).
-Therefore, simply normalizing the inputs to a layer should also help to speed up the optimization of the weights in that layer.
+Therefore, simply normalizing the inputs to a layer &mdash; i.e., the outputs from the previous layer &mdash; should also help to speed up the optimization of the weights in that layer.
 Using these insights, [Schraudolph (1998)](#schraudolph98centering) showed empirically that centering the activations effectively speeds up learning.
 
 Also initialization strategies commonly build on these principles (e.g., [Lecun et al., 1998](#lecun98efficient); [Glorot & Bengio, 2010](#glorot10understanding); [He et al., 2015](#he15delving)).
@@ -87,7 +87,7 @@ In case a zero mean and unit variance is not desired, it is also possible to app
 The above description explains the core operation of BN during training.
 However, during inference, it is not uncommon to desire predictions for single samples.
 Obviously, this would cause trouble because a mini-batch with a single sample has zero variance.
-Therefore, it is common to accumulate the statistics that are used for normalization ( $\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$ ), over multiple mini-batches during training.
+Therefore, it is common to accumulate the statistics that are used for normalization ( $\boldsymbol{\mu}\_\mathcal{B}$ and $\boldsymbol{\sigma}\_\mathcal{B}^2$ ) over multiple mini-batches during training.
 These accumulated statistics can then be used as estimators for the mean and variance during inference.
 This makes it possible for BN to be used on single samples during inference.
 
@@ -150,7 +150,7 @@ This gives rise to a technique known as **Instance Normalization (IN)**, which p
     <figcaption>
         Figure&nbsp;2: Normalization methods (Batch, Layer, Instance and Group Normalization) and the parts of the input they compute their statistics over.
         Different dimensions are visualized (and explained) in Figure&nbsp;<a href="#fig_dims">1</a>.
-        The lightly shaded region for LN indicates how it is typically used for image data.
+        The lightly shaded region for LN indicates the additional context that is typically used for image data.
         Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
     </figcaption>
 </figure>
@@ -238,7 +238,7 @@ After all, the variance is linear and unless the non-linear transformation branc
 Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when skip connections are chained together.
 Luckily, these drifting effects can be mitigated to some extent.
 
-Similar to standard initialization methods, the key idea is to stabilise the variance propagation.
+Similar to standard initialization methods, the key idea to counter drifting in ResNets is to stabilise the variance propagation.
 To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
 
 $$\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\alpha \boldsymbol{x}),$$
@@ -282,7 +282,7 @@ However, the more general approach should assure that the outputs of residual br
 It could be argued that the current popularity of skip connections is due to BN.
 After all, without BN, the skip connections in ResNets would have suffered from the drifting effects discussed [earlier](#moment-control).
 However, this does not take away that BN does have a few [practical issues](#alternatives) and there do seem to be alternative techniques to control these drifting effects.
-Therefore, it makes sense to research the question of whether BN is just a useful or a necessary component of the ResNet architecture.
+Therefore, it makes sense to research the question of whether BN is just a useful or a _necessary_ component of the ResNet architecture.
 
 ### Old Ideas
 
