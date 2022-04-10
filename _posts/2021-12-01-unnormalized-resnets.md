@@ -243,11 +243,16 @@ This comparison does only hold, however, if you are willing to interpret the att
 ### Moment Control
 
 Traditional initialization techniques manage to provide a stable starting point for the propagation of mean and variance in fully connected layers, but they do not work so well in ResNets.
-The key problem is that the variance can not remain constant when skip connections are involved.
+The key problem is that the variance can not remain constant when simple additive skip connections are used.
 After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance must be greater than the input variance.
-Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when skip connections are chained together.
+Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when residual layers are chained together.
 Luckily, these drifting effects can be mitigated to some extent.
-On one side by using BN, but what are the alternatives exactly?
+On one side by using BN, but are there alternative approaches and if yes, what are they?
+
+Before we come to possible solutions, it might be useful to point out that these drift effects are due to the simple _additive_ skip connections used in ResNets.
+For example, the gating mechanism that is used to control the skip connection in highway networks makes the mean shift much less of a problem than in ResNets.
+In the case of DenseNets, the concatenation does not affect either mean or variance if the residual branch produces outputs with similar statistics as the inputs.
+Therefore, we mainly focus on these simple _additive_ skip connections in ResNets.
 
 Similar to standard initialization methods, the key idea to counter drifting in ResNets is to stabilise the variance propagation.
 To this end, a slightly modified formulation of skip connections is typically used (e.g., [Szegedy et al., 2016](#szegedy16inceptionv4); [Balduzzi et al., 2017](#balduzzi17shattered); [Hanin & Rolnick, 2018](#hanin18how)):
@@ -277,7 +282,7 @@ Eventually, they propose to set $\beta = b^l$ after the $l$-th skip connection, 
 [Arpit et al. (2019)](#arpit19how) additionally take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
 Learning the scaling factor $\beta$ in each layer can also make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
-There are of course also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
+There are, of course, also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
 One alternative solution is to make use of an empirical approach to weight initialization ([Mishkin et al., 2016](#mishkin16lsuv)).
 By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
 In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
@@ -413,9 +418,10 @@ Assuming that the ideas in NF-ResNets can make BN (at least partly) obsolete, th
 
 ### Limitations
 
-First of all, the exact procedure for scaling residual branches is only meaningful for architectures that include (some sort of) skip connections.
-In general, it is not possible to apply the ideas behind NF-ResNets to get rid of BN layers in arbitrary architectures.
-Furthermore, NF-ResNets still rely on normalization methods to attain good performance &mdash; in contrast to what their name might suggest.
+First of all, the exact procedure for scaling residual branches is only meaningful for architectures that make use of simple additive skip connections.
+This means that it is not possible to directly apply the ideas behind NF-ResNets on arbitrary architectures to get rid of BN layers.
+Even similar architectures that make use a different kind of skip connection (e.g., DenseNets, Highway Networks, ...) are probably not compatible with this exact approach.
+Furthermore, NF-ResNets still rely on (other) normalization methods to attain good performance &mdash; in contrast to what their name might suggest.
 [Brock et al. (2021a)](#brock21characterizing) emphasise that they effectively do away with _activation normalization_, but they do rely on an adaptation of Weight Normalization to replace BN.
 In this sense, it is arguable whether NF-ResNets are truly normalizer-free.
 Finally, some of the problems with BN are not resolved or reintroduced when building competitive NF-ResNets.
