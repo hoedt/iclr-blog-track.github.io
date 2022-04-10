@@ -350,7 +350,7 @@ This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted
         Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50 at initialization.
         SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$, $y$-axis on the right).
         The left plot illustrates the difference between ResNets with and without BN layers.
-        The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling.
+        The plot on the right shows the same SPP for a ResNet with BN without the logarithmic scaling (cf. "<em>BN->ReLU</em>" in Figure&nbsp;1, <a href="#brock21characterizing">Brock et al., 2021a</a>).
         Note that ResNet-50 has four sub-nets with 3, 4, 6 and 3 skip connections, respectively.
     </figcaption>
 </figure>
@@ -373,8 +373,8 @@ Although it would have been perfectly possible to maintain a steady variance, NF
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalization (gray lines) and one for a Normalizer-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
     <figcaption>
         Figure&nbsp;5: SPPs comparing an NF-ResNet-50 to a Resnet with BN at initialization.
-        The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters.
-        The right plot displays the behaviour of an NF-ResNet with Centered Weight Normalization.
+        The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters (cf. "<em>NF, He Init</em>" in Figure&nbsp;2, <a href="#brock21characterizing">Brock et al., 2021a</a>).
+        The right plot displays the behaviour of an NF-ResNet with Centered Weight Normalization (cf. "<em>NF, Scaled WS</em>" in Figure&nbsp;2, <a href="#brock21characterizing">Brock et al., 2021a</a>).
         Note that the variance of the residuals in the right plot should give some insights as to why the curves do not overlap.
     </figcaption>
 </figure>
