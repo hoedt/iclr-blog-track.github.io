@@ -159,7 +159,7 @@ This gives rise to a technique known as **Instance Normalization (IN)**, which p
     <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/normalisation_dimensions.svg" alt="visualization of normalization methods">
     <figcaption>
         Figure&nbsp;2: Normalization methods (Batch, Layer, Instance and Group Normalization) and the parts of the input they compute their statistics over.
-        Different dimensions are visualized (and explained) in Figure&nbsp;<a href="#fig_dims">1</a>.
+        $|\mathcal{B}|,$ $C,$ and $S$ are batch size, number of channels/features and signal size, respectively (cf. Figure&nbsp;<a href="#fig_dims">1</a>).
         The lightly shaded region for LN indicates the additional context that is typically used for image data.
         Image has been adapted from (<a href="#wu18groupnorm">Wu & He, 2018</a>).
     </figcaption>
