@@ -430,20 +430,21 @@ E.g., there are still differences between training and testing when using plain 
 ### Insights
 
 In the end, an NF-ResNet can be interpreted as consisting of different components that model parts of what BN normally does.
-For example, the $\alpha$ scaling factor used in NF-ResNets obviously models the division by the standard deviation of BN.
+For example, the $\alpha$ scaling factor used in NF-ResNets clearly models the division by the standard deviation of BN.
 It is also easy to see that the implicit regularization that is attributed to BN can be replaced by explicit regularization schemes.
-Furthermore, the mean subtraction in BN is practically implemented by means of the weight centering in CWN.
-Also, the scale-invariance of the weights of BN is re-introduced through CWN.
-The input scale-invariance that BN introduces in each layer, on the other hand, is lost when using CWN.
+Furthermore, the mean subtraction in BN is practically implemented by the weight centering in CWN.
+Also, the scale-invariance of the weights due to BN is re-introduced through CWN.
+However, the input scale-invariance that BN introduces in each layer is lost when using CWN.
 When considering the entire residual branch (or network), however, $\alpha$ does enable some sort of scale-invariance for the entirety of this branch (or network).
 Finally, the affine transformation after the normalization in BN is modelled by scaling the result of CWN.
 Note that the affine shift does not need to be modelled explicitly, since CWN does not annihilate the regular bias parameters of the layers it acts upon, in contrast to BN.
 
 Although the effects of BN on the forward pass seem to be modelled quite well by NF-ResNets, the effects on the backward pass seem to be largely ignored by [Brock et al. (2021a)](#brock21characterizing).
-Follow-up work by [Brock et al. (2021b)](#brock21highperformance) suggests that these effects might not be unimportant.
-After all, the gradient flow in NF-ResNets is only affected by the scaling factors, $\alpha$ and $\beta,$ since CWN does not affect the gradients w.r.t. the inputs.
+This might indicate that the performance differences might be explained by the effect of BN on the backward pass.
+Follow-up work by [Brock et al. (2021b)](#brock21highperformance) also suggest that these effects might not be unimportant.
+After all, the gradient flow in NF-ResNets is only affected by the scaling factors, $\alpha$ and $\beta,$ since CWN does not otherwise affect the gradients w.r.t. the inputs.
 Therefore, regular NF-ResNets do not have a gradient centering ([Schraudolph, 1998](#schraudolph98centering)) component, as can be found in BN layers.
-However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to the gradient dynamics that are inherent to BN.
+However, an adaptive gradient clipping scheme ([Brock et al. 2021](#brock21highperformance)) seems to provide an effective alternative to what BN does in the backward pass.
 
 ### Conclusion
 
@@ -453,6 +454,22 @@ Therefore, it could be argued that NF-ResNets are not entirely _normalizer-free_
 It almost seems as if NF-ResNets are an example of how BN can be imitated using different components, rather than how to get rid of it.
 This also means that it is hard to distil meaningful insights as to why/how BN works so well.
 One thing that this approach does make clear is that the backward dynamics due to BN should be part of the explanation.
+
+In terms of the questions we set out to answer at the start, we could summarize as follows:
+
+ 1. Why get rid of BN in the first place[?](#alternatives)
+    <br/>The dependency on batch statistics does raise some concerns.
+ 2. How (easy is it) to get rid of BN in ResNets[?](#moment-control)
+    <br/>Although it is one of the reasons why ResNets made skip connections so popular,
+    there are plenty of alternative tricks that can achieve similar effects.
+ 3. Is BN going to become obsolete in the near future[?](#limitations)
+    <br/>It does not look like BN will disappear soon, because the techniques to get rid of BN are probably too specific to the ResNet architecture.
+ 4. Does this allow us to gain insights into why BN works so well[?](#insights)
+    <br/>NF-ResNets practically copy the forward dynamcis of ResNets with BN, which seems to suggest that the backward dynamics of BN play an important role.
+ 5. Wait a second... Are they getting rid of normalization or just BN[?](#conclusion)
+    <br/>Despite their name, NF-ResNets merely replace BN by another normalization technique.
+
+PS: The question marks link to the relevant sections in case you would like some more detail after all.
 
 **TL;DR:** NF-ResNets, rescaled ResNets with Centered Weight Normalization, can be used to imitate the forward pass of ResNets with BN, but they do not help much to explain what makes BN so successful.
 
