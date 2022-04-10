@@ -246,8 +246,8 @@ Traditional initialization techniques manage to provide a stable starting point 
 The key problem is that the variance can not remain constant when simple additive skip connections are used.
 After all, the variance is linear and unless the non-linear transformation branch would output a zero-variance signal, the output variance must be greater than the input variance.
 Moreover, if the signal would have a strictly positive mean, also the mean would start drifting when residual layers are chained together.
-Luckily, these drifting effects can be mitigated to some extent.
-On one side by using BN, but are there alternative approaches and if yes, what are they?
+Luckily, these drifting effects can be mitigated to some extent, e.g. by using BN.
+However, are there alternative approaches and if yes, what are these approaches?
 
 Before we come to possible solutions, it might be useful to point out that these drift effects are due to the simple _additive_ skip connections used in ResNets.
 For example, the gating mechanism that is used to control the skip connection in highway networks makes the mean shift much less of a problem than in ResNets.
@@ -297,7 +297,7 @@ However, the more general approach should assure that the outputs of residual br
 
 It could be argued that the current popularity of skip connections is due to BN.
 After all, without BN, the skip connections in ResNets would have suffered from the drifting effects discussed [earlier](#moment-control).
-However, this does not take away that BN does have a few [practical issues](#alternatives) and there do seem to be alternative techniques to control these drifting effects.
+However, this does not take away that BN does have a few [practical issues](#alternatives) and there are alternative techniques to control these drifting effects.
 Therefore, it makes sense to research the question of whether BN is just a useful or a _necessary_ component of the ResNet architecture.
 
 ### Old Ideas
