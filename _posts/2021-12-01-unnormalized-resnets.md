@@ -282,16 +282,6 @@ Eventually, they propose to set $\beta = b^l$ after the $l$-th skip connection, 
 [Arpit et al. (2019)](#arpit19how) additionally take the backward pass into account and show that $\beta = L^{-1}$ provides stable variance propagation in a ResNet with $L$ skip connections.
 Learning the scaling factor $\beta$ in each layer can also make it possible to keep the variance under control ([Zhang et al., 2019](#zhang19fixup); [De & Smith, 2020](#de20skipinit)).
 
-There are, of course, also workarounds that do not quite fit the general formulation with scaling factors $\alpha$ and $\beta.$
-One alternative solution is to make use of an empirical approach to weight initialization ([Mishkin et al., 2016](#mishkin16lsuv)).
-By rescaling random orthogonal weight matrices by the empirical variance of the output activations at each layer, [Mishkin et al. (2016)](#mishkin16lsuv) show that it is possible to train ResNets without BN.
-In some sense, this approach can be interpreted as choosing a scaling factor for each layer in the residual branch (and in some of the skip connections).
-Instead of using the reciprocal of the empirical variance as a scaling factor, [Zhang et al. (2019)](#zhang19fixup) scale the initial weights of the $k$-th layer in each of the $L$ residual branches by a factor $L^{-1/(2k-2)}.$
-[Shao et al. (2020)](#shao20rescalenet) propose to combine the skip connection using the slightly modified formulation, $\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\boldsymbol{x}),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection. 
-Here, $c$ is an arbitrary constant, which was eventually set to be the number of residual branches, $L$.
-For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha = 1 / \sqrt{2},$ as suggested by [Balduzzi et al. (2017)](#balduzzi17shattered).
-However, the more general approach should assure that the outputs of residual branches are weighted similarly at the output of the network, independent of their depth.
-
 
 ## Normalizer-Free ResNets
 
@@ -302,18 +292,24 @@ Therefore, it makes sense to research the question of whether BN is just a usefu
 
 ### Old Ideas
 
-Whereas some alternative normalization methods aimed to simply provide normalization in scenarios where BN does not work so well, other methods were explicitly designed to reduce or get rid of the normalization computations (e.g., [Arpit et al., 2016](#arpit16normprop); [Salimans & Kingma, 2016](#salimans16weightnorm); [Klambauer et al., 2017](#klambauer17selfnorm)).
+Whereas some alternative normalization methods aim to simply provide normalization in scenarios where BN does not work so well, other methods have been explicitly designed to reduce or get rid of the normalization computations (e.g., [Arpit et al., 2016](#arpit16normprop); [Salimans & Kingma, 2016](#salimans16weightnorm); [Klambauer et al., 2017](#klambauer17selfnorm)).
 Even the idea of training ResNets without BN is practically as old as ResNets themselves.
 With their Layer-Sequential Unit-Variance (LSUV) initialization, [Mishkin et al. (2016)](#mishkin16lsuv) showed that it is possible to replace BN with good initialization for small datasets (CIFAR-10).
 Similarly, [Arpit et al. (2019)](#arpit19) are able to close the gap between Weight Normalization (WN) and BN by reconsidering weight initialization in ResNets.
 
 Getting rid of BN in ResNets was posed as an explicit goal by [Zhang et al. (2019)](#zhang19fixup), who proposed the so-called FixUp initialization scheme.
-On top of introducing the learnable $\beta$ parameters and the $L^{-1/(2k - 2)}$ scaling in residual branches,
+On top of introducing the learnable $\beta$ parameters and the $L^{-1/(2k - 2)}$ scaling for all layers $k$ in each of the $L$ residual branches,
 they set the initial weights for the last layer in each residual branch to zero and introduce scalar biases before every layer in the network.
 With these tricks, Zhang et al. show that FixUp can provide _almost_ the same benefits as BN for ResNets in terms of trainability and generalization.
 Using a different derivation, [De & Smith (2020)](#de20skipinit) end up with a very similar solution to train ResNets without BN, which they term SkipInit.
 The key difference with FixUp is that the initial value for the learnable $\beta$ parameter is set to be less than $1 / \sqrt{L}.$
 As a result, SkipInit does not require the rescaling of initial weights in residual branches or setting weights to zero, which are considered crucial parts of the FixUp strategy ([Zhang et al. (2019)](#zhang19fixup)).
+
+Also [Shao et al. (2020)](#shao20rescalenet) suggest to use a simple scaling strategy to replace BN in ResNets.
+They propose to use a slightly modified scaling of the form, $\boldsymbol{y} = \alpha \boldsymbol{x} + \beta f(\boldsymbol{x}),$ where $\alpha^2 = 1 - \beta^2$ and $\beta^2 = 1 / (l + c)$ for the $l$-th skip connection.
+Here, $c$ is an arbitrary constant, which was eventually set to be the number of residual branches, $L$.
+For a single-layer ResNet ($l = c = 1$), this is equivalent to setting $\alpha = 1 / \sqrt{2},$ as suggested by [Balduzzi et al. (2017)](#balduzzi17shattered).
+However, the more general approach should assure that the outputs of residual branches are weighted similarly at the output of the network, independent of their depth.
 
 ### Imitating Signal Propagation
 
