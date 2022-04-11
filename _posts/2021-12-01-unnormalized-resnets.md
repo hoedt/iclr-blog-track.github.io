@@ -2,7 +2,7 @@
 layout: post
 title: Normalization is dead, long live normalization!
 tags: [normalization, initialization, propagation, skip connections, residual networks]
-authors: Anonymous; 
+authors: Hoedt, Pieter-Jan; Klambauer, Günter; Hochreiter, Sepp
 ---
 
 <style>
