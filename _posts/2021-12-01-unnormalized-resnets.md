@@ -471,6 +471,17 @@ PS: The question marks link to the relevant sections in case you would like some
 
 ---
 
+### Acknowledgements
+
+Special thanks go to Katharina Prinz, [Niklas Schmidinger](https://www.niklasschmidinger.com/) and the anonymous reviewer for their constructive feedback.
+
+The ELLIS Unit Linz, the LIT AI Lab, the Institute for Machine Learning, are supported by the Federal State Upper Austria.
+IARAI is supported by Here Technologies. 
+We thank the projects AI-MOTION (LIT-2018-6-YOU-212), AI-SNN (LIT-2018-6-YOU-214), DeepFlood (LIT-2019-8-YOU-213), Medical Cognitive Computing Center (MC3), INCONTROL-RL (FFG-881064), PRIMAL (FFG-873979), S3AI (FFG-872172), DL for GranularFlow (FFG-871302), AIRI FG 9-N (FWF-36284, FWF-36235), ELISE (H2020-ICT-2019-3 ID: 951847). 
+We thank Audi.JKU Deep Learning Center, TGW LOGISTICS GROUP GMBH, Silicon Austria Labs (SAL), FILL Gesellschaft mbH, Anyline GmbH, Google, ZF Friedrichshafen AG, Robert Bosch GmbH, UCB Biopharma SRL, Merck Healthcare KGaA, Verbund AG, Software Competence Center Hagenberg GmbH, TÜV Austria, Frauscher Sensonic and the NVIDIA Corporation.
+
+---
+
 ## Extra Code Snippets
 
 To facilitate the implementation of pre-residual networks in pytorch and to give a full example of how to implement the signal propagation plotting, we provide additional code snippets in [PyTorch](https://pytorch.org).
