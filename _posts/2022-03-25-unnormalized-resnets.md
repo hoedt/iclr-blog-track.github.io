@@ -5,10 +5,6 @@ tags: [normalization, initialization, propagation, skip connections, residual ne
 authors: Hoedt, Pieter-Jan; Klambauer, Günter; Hochreiter, Sepp
 ---
 
-<style>
-    figcaption { color: gray; }
-</style>
-
 Since the advent of Batch Normalization (BN), almost every state-of-the-art (SOTA) method uses some form of normalization.
 After all, normalization generally speeds up learning and leads to models that generalize better than their unnormalized counterparts.
 This turns out to be especially useful when using some form of skip connections, which are prominent in Residual Networks (ResNets), for example.
@@ -23,6 +19,10 @@ The fact that Brock et al. went out of their way to get rid of something as simp
  5. Wait a second... Are they getting rid of normalization or just BN[?](#conclusion)
 
 The goal of this blog post is to provide some insights w.r.t. these questions using the results from [Brock et al. (2021a)](#brock21characterizing).
+
+<style>
+    figcaption { color: gray; }
+</style>
 
 ## Contents
 
