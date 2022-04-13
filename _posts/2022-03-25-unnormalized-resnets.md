@@ -136,7 +136,7 @@ Although BN provides important benefits, it also comes with a few downsides:
 Therefore, alternative normalization methods have been proposed to solve one or more of the problems listed above while trying to maintain the benefits of BN.
 
 <figure id="fig_dims">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/data_dimensions.svg" alt="visualization of different input data types">
+    <img src="{{ site.url }}/public/images/2022-03-25-unnormalized-resnets/data_dimensions.svg" alt="visualization of different input data types">
     <figcaption>
         Figure&nbsp;1: Different input types in terms of their typical 
         batch size ($|\mathcal{B}|$), the number of channels/features ($C$) and the <em>size</em> of the signal ($S$) (e.g. width times height for images).
@@ -156,7 +156,7 @@ For convolutional networks that should be invariant to changes in contrast, stat
 This gives rise to a technique known as **Instance Normalization (IN)**, which proved especially helpful in the context of style transfer ([Ulyanov et al., 2017](#ulyanov17improved)).
 
 <figure id="fig_norm">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/normalisation_dimensions.svg" alt="visualization of normalization methods">
+    <img src="{{ site.url }}/public/images/2022-03-25-unnormalized-resnets/normalisation_dimensions.svg" alt="visualization of normalization methods">
     <figcaption>
         Figure&nbsp;2: Normalization methods (Batch, Layer, Instance and Group Normalization) and the parts of the input they compute their statistics over.
         $|\mathcal{B}|,$ $C,$ and $S$ are batch size, number of channels/features and signal size, respectively (cf. Figure&nbsp;<a href="#fig_dims">1</a>).
@@ -221,7 +221,7 @@ e.g., [Srivastava et al. (2015)](#srivastava15highway) argue that information sh
 [He et al., (2016a)](#he16resnet), on the other hand, claim that learning should be easier if the network can focus on the non-linear part of the transformation (and ignore the linear component).
 
 <figure id="fig_skip">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/skip_connections.svg" alt="visualization of different types of skip connections">
+    <img src="{{ site.url }}/public/images/2022-03-25-unnormalized-resnets/skip_connections.svg" alt="visualization of different types of skip connections">
     <figcaption>
         Figure&nbsp;3: Variations on skip connections in ResNets, Densenets and Highway networks.
         The white blocks correspond to the input / skip connection and the blue blocks correspond to the output of the non-linear transformation.
@@ -346,7 +346,7 @@ When focusing on ResNets with BN (on the right of Figure&nbsp;[4](#fig_spp)), it
 This reduction is due to the _pre-activation_ block (BN + ReLU) that is inserted between every two sub-nets in these ResNets (remember the code snippet from earlier?).
 
 <figure id="fig_spp">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalization on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
+    <img src="{{ site.url }}/public/images/2022-03-25-unnormalized-resnets/spp.svg" alt="Image with two plots. The left plot shows two signal propagation plots: one for ResNets with (increasing gray lines) and one for ResNets without (approximately flat blue lines) Batch Normalization on a logarithmic scale. The right plot shows the zig-zag lines that represent the squared mean and variance after each residual branch." width="100%">
     <figcaption>
         Figure&nbsp;4: Example Signal Propagation Plots (SPPs) for a pre-activation (v2) ResNet-50 at initialization.
         SPPs plot the squared mean ($\mu^2$) and variance ($\sigma^2$) of the pre-activations after each skip connection ($x$-axis), as well as the variance of the residuals before the skip connection ($\sigma_f^2$, $y$-axis on the right).
@@ -371,7 +371,7 @@ Note that this also means that the variance within sub-networks of an NF-ResNet 
 Although it would have been perfectly possible to maintain a steady variance, NF-ResNets are effectively designed to mimic the signal propagation due to BN layers in regular ResNets.
 
 <figure id="fig_nfresnet">
-    <img src="{{ site.url }}/public/images/2021-12-01-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalization (gray lines) and one for a Normalizer-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
+    <img src="{{ site.url }}/public/images/2022-03-25-unnormalized-resnets/spp_nfresnet.svg" alt="Image with two plots. The left plot shows two SPPs: one for a ResNet with Batch Normalization (gray lines) and one for a Normalizer-Free ResNet (blue lines). The curves representting variance for both models are very close to each other, but the curve for the mean is quite different. The right plot is similar, but now the blue mean and residual variance curves are zero and one everywhere, respectively." width="100%">
     <figcaption>
         Figure&nbsp;5: SPPs comparing an NF-ResNet-50 to a Resnet with BN at initialization.
         The NF-ResNet in the left plot only uses the $\alpha$ and $\beta$ scaling parameters (cf. "<em>NF, He Init</em>" in Figure&nbsp;2, <a href="#brock21characterizing">Brock et al., 2021a</a>).
@@ -492,7 +492,7 @@ The first snippet implements skip connections according to ([He et al., 2016b](#
 The comments aim to highlight the differences with the ResNets from ([He et al., 2016a](#he16resnet)), for which an [implementation](https://github.com/pytorch/vision/blob/v0.11.2/torchvision/models/resnet.py#L86-L141) is included in the [Torchvision](https://pytorch.org/vision/stable/models.html#id10) library.
 
 ```python
-{% include 2021-12-01-unnormalized-resnets/preresnet_block.py %}
+{% include 2022-03-25-unnormalized-resnets/preresnet_block.py %}
 ```
 
 #### NF-ResNets
@@ -501,7 +501,7 @@ When comparing the code for a skip connection between an NF-ResNet and a regular
 So much so that it is more efficient to consider the `diff` output than the full code.
 
 ```diff
-{%include 2021-12-01-unnormalized-resnets/nfresnet_block.patch %}
+{%include 2022-03-25-unnormalized-resnets/nfresnet_block.patch %}
 ```
 
 The patch above shows that apart from removing the BN layers and introducing the $\alpha$ and $\beta$ parameters, the BN layer in the pre-activation has to be replaced by the $\alpha$ scaling that is introduced in NF-ResNets.
@@ -509,13 +509,13 @@ These changes are effectively everything that needs to be done.
 To be fair, this `Scaling` module is not standard in PyTorch, but it is easy enough to create it:
 
 ```python
-{% include 2021-12-01-unnormalized-resnets/scaling.py %}
+{% include 2022-03-25-unnormalized-resnets/scaling.py %}
 ```
 
 Putting everything together, including the `signal_prop` method introduced [earlier](#imitating-signal-propagation), the resulting code should correspond to the following:
 
 ```python
-{% include 2021-12-01-unnormalized-resnets/nfresnet_block.py %}
+{% include 2022-03-25-unnormalized-resnets/nfresnet_block.py %}
 ```
 
 The code for a full NF-ResNet (with multiple multi-layer sub-nets) can be found in a code snippets for [multi-layer SPPs](#multi-layer-spps).
@@ -528,7 +528,7 @@ This code is inspired by the [`ResNet`](https://github.com/pytorch/vision/blob/v
 If you want to use this code, make sure that the `NFResidualBottleneck` module also provides a `signal_prop` method, as introduced [earlier](#imitating-signal-propagation).
 
 ```python
-{% include 2021-12-01-unnormalized-resnets/nfresnet_spp.py %}
+{% include 2022-03-25-unnormalized-resnets/nfresnet_spp.py %}
 ```
 
 
